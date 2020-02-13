@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "deepy"
+version = "0.0.1"
+description = ""
+authors = ["popura <popura.net@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+numpy = "^1.18.1"
+torch = "^1.4.0"
+torchvision = "^0.5.0"
+
+[tool.poetry.dev-dependencies]
+flake8 = "^3.7.9"
+autopep8 = "^1.5"
+torchsummary = "^1.5.1"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
