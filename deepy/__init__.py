@@ -1,7 +1,7 @@
-import core
-import layer
-import model
-import dataset
-import trainer
-import transform
-import util
+import deepy.core
+import deepy.layer
+import deepy.model
+import deepy.dataset
+import deepy.trainer
+import deepy.transform
+import deepy.util

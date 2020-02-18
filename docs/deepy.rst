@@ -20,14 +20,6 @@ deepy.dataset module
    :undoc-members:
    :show-inheritance:
 
-deepy.helpers module
---------------------
-
-.. automodule:: deepy.helpers
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 deepy.layer module
 ------------------
 

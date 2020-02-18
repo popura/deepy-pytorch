@@ -1,7 +1,7 @@
 from abc import ABCMeta
 from abc import abstractmethod
 import random
-import torchvision.functional as F
+import torchvision.transforms.functional as F
 from torchvision.transforms import RandomResizedCrop
 from PIL import Image
 
@@ -71,7 +71,7 @@ class PairedRandomResizedCrop(PairedTransform):
                                            ratio, interpolation)
     
     def __call__(self, img, target):
-        i, j, h, w = self.transform.get_params(img, self.transform.scale
+        i, j, h, w = self.transform.get_params(img, self.transform.scale,
                                                self.transform.ratio)
         transformed_img = F.resized_crop(img, i, j, h, w, self.transform.size,
                                          self.transform.interpolation)

@@ -6,7 +6,7 @@ from torch.nn.parameter import Parameter
 from torch.nn.init import constant_
 import torch.nn.functional as F
 from torchvision.datasets.vision import VisionDataset
-from torchvision.datasets.vision import is_image_file
+from torchvision.datasets.folder import is_image_file
 from PIL import Image
 
 class CaiMEImageDataset(VisionDataset):
@@ -29,7 +29,7 @@ class CaiMEImageDataset(VisionDataset):
             q = self.file_dir / "multi_exposure" / p.stem
             if is_image_file(str(p)) and q.exists:
                 for r in q.glob("*"):
-                    if is_image_file(str(r))
+                    if is_image_file(str(r)):
                         item = (str(r), str(p))
                         images.append(item)
         

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from deepy.pytorch import layer
+from deepy import layer
 
 
 class MyNet(nn.Module):
