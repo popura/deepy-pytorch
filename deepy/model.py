@@ -748,7 +748,7 @@ class ITMNet(UNet):
             return x
     
     class gl_cat(nn.Module):
-        def __init__(self, in_ch, out_ch)
+        def __init__(self, in_ch, out_ch):
             super(ITMNet.gl_cat, self).__init__()
             self.conv = UNet.double_conv(in_ch, out_ch)
 

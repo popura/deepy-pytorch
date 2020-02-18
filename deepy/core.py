@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 def get_hmm():
-    """
-    Get a thought.
+    """Get a thought.
     
     Examples
     --------
