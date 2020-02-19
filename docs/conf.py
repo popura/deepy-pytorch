@@ -20,6 +20,8 @@ sys.path.insert(0, os.path.abspath('../deepy/'))
 project = 'deepy'
 copyright = '2020, popura'
 author = 'popura'
+version = '0.0.1'
+release = '0.0.1'
 
 
 # -- General configuration ---------------------------------------------------
