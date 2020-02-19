@@ -8,7 +8,7 @@ from torch import autograd
 import torch.nn.functional as F
 from torchvision.utils import save_image
 
-from util import AverageMeter, gradshow
+from deepy.util import AverageMeter, gradshow
 
 
 class Trainer(metaclass = ABCMeta):
