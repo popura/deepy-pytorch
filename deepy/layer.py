@@ -9,6 +9,28 @@ import collections.abc
 
 
 def _ntuple(n):
+    """Translate a float value to n-dim tuple
+
+    Examples
+    --------
+    >>> a = _ntuple(2)
+    >>> a(10)
+    (10, 10)
+    >>> b = _ntuple(5)
+    >>> b(-2)
+    (-2, -2, -2, -2, -2)
+
+    Aliases
+    -------
+    >>> _single(2)
+    (2,)
+    >>> _pair(2)
+    (2, 2)
+    >>> _triple(2)
+    (2, 2, 2)
+    >>> _quadruple(2)
+    (2, 2, 2, 2)
+    """
     def parse(x):
         if isinstance(x, collections.abc.Iterable):
             return x
@@ -23,6 +45,18 @@ _quadruple = _ntuple(4)
 
 
 def _generate_hold_kernel(in_channels, zoh_kernel_size, order):
+    """Convolve a zero-order hold kernel with the size of *zoh_kernel_size* *order* times
+
+    Examples
+    --------
+    >>> _generate_hold_kernel(1, 2, 0)
+    tensor([[[[1., 1.],
+              [1., 1.]]]])
+    >>> _generate_hold_kernel(1, 2, 1)
+    tensor([[[[1., 2., 1.],
+              [2., 4., 2.],
+              [1., 2., 1.]]]])
+    """
     zoh_kernel_size = _pair(zoh_kernel_size)
 
     # Zero-order hold kernel

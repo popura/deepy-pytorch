@@ -1,11 +1,44 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchsummary import summary
 
 from deepy import layer
 
 
 class MyNet(nn.Module):
+    """A simple CNN
+
+    >>> device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    >>> net = MyNet().to(device)
+    >>> summary(net , (3, 32, 32))
+    ----------------------------------------------------------------
+            Layer (type)               Output Shape         Param #
+    ================================================================
+                Conv2d-1           [-1, 64, 16, 16]           1,792
+           BatchNorm2d-2           [-1, 64, 16, 16]             128
+                  ReLU-3           [-1, 64, 16, 16]               0
+                Conv2d-4            [-1, 128, 8, 8]          73,856
+           BatchNorm2d-5            [-1, 128, 8, 8]             256
+                  ReLU-6            [-1, 128, 8, 8]               0
+                Conv2d-7            [-1, 256, 4, 4]         295,168
+           BatchNorm2d-8            [-1, 256, 4, 4]             512
+                  ReLU-9            [-1, 256, 4, 4]               0
+               Conv2d-10            [-1, 512, 2, 2]       1,180,160
+          BatchNorm2d-11            [-1, 512, 2, 2]           1,024
+                 ReLU-12            [-1, 512, 2, 2]               0
+               Conv2d-13             [-1, 10, 1, 1]          20,490
+    ================================================================
+    Total params: 1,573,386
+    Trainable params: 1,573,386
+    Non-trainable params: 0
+    ----------------------------------------------------------------
+    Input size (MB): 0.01
+    Forward/backward pass size (MB): 0.70
+    Params size (MB): 6.00
+    Estimated Total Size (MB): 6.72
+    ----------------------------------------------------------------
+    """
     def __init__(self, down_sampling_layer=nn.Conv2d):
         super(MyNet, self).__init__()
         self.net = nn.Sequential(
@@ -38,6 +71,47 @@ class MyNet(nn.Module):
 
 
 class VGG(nn.Module):
+    """VGG8, 11, 13, 16, and 19
+    
+    >>> device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    >>> net = VGG('VGG8').to(device)
+    >>> summary(net , (3, 32, 32))
+    ----------------------------------------------------------------
+            Layer (type)               Output Shape         Param #
+    ================================================================
+                Conv2d-1           [-1, 64, 32, 32]           1,792
+           BatchNorm2d-2           [-1, 64, 32, 32]             128
+                  ReLU-3           [-1, 64, 32, 32]               0
+                Conv2d-4           [-1, 64, 16, 16]          36,928
+                Conv2d-5          [-1, 128, 16, 16]          73,856
+           BatchNorm2d-6          [-1, 128, 16, 16]             256
+                  ReLU-7          [-1, 128, 16, 16]               0
+                Conv2d-8            [-1, 128, 8, 8]         147,584
+                Conv2d-9            [-1, 256, 8, 8]         295,168
+          BatchNorm2d-10            [-1, 256, 8, 8]             512
+                 ReLU-11            [-1, 256, 8, 8]               0
+               Conv2d-12            [-1, 256, 4, 4]         590,080
+               Conv2d-13            [-1, 512, 4, 4]       1,180,160
+          BatchNorm2d-14            [-1, 512, 4, 4]           1,024
+                 ReLU-15            [-1, 512, 4, 4]               0
+               Conv2d-16            [-1, 512, 2, 2]       2,359,808
+               Conv2d-17            [-1, 512, 2, 2]       2,359,808
+          BatchNorm2d-18            [-1, 512, 2, 2]           1,024
+                 ReLU-19            [-1, 512, 2, 2]               0
+               Conv2d-20            [-1, 512, 1, 1]       2,359,808
+            AvgPool2d-21            [-1, 512, 1, 1]               0
+               Linear-22                   [-1, 10]           5,130
+    ================================================================
+    Total params: 9,413,066
+    Trainable params: 9,413,066
+    Non-trainable params: 0
+    ----------------------------------------------------------------
+    Input size (MB): 0.01
+    Forward/backward pass size (MB): 3.10
+    Params size (MB): 35.91
+    Estimated Total Size (MB): 39.02
+    ----------------------------------------------------------------
+    """
     def __init__(self, vgg_name, down_sampling_layer=nn.Conv2d):
         super(VGG, self).__init__()
         self.CFG = {
@@ -75,6 +149,74 @@ class VGG(nn.Module):
 
 
 class ResNet(nn.Module):
+    """ResNet18, 34, 50, 101, and 152
+
+    >>> device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    >>> net = ResNet('ResNet18').to(device)
+    >>> summary(net , (3, 32, 32))
+    ----------------------------------------------------------------
+            Layer (type)               Output Shape         Param #
+    ================================================================
+                Conv2d-1           [-1, 64, 32, 32]           1,728
+           BatchNorm2d-2           [-1, 64, 32, 32]             128
+                Conv2d-3           [-1, 64, 32, 32]          36,864
+           BatchNorm2d-4           [-1, 64, 32, 32]             128
+                Conv2d-5           [-1, 64, 32, 32]          36,864
+           BatchNorm2d-6           [-1, 64, 32, 32]             128
+            BasicBlock-7           [-1, 64, 32, 32]               0
+                Conv2d-8           [-1, 64, 32, 32]          36,864
+           BatchNorm2d-9           [-1, 64, 32, 32]             128
+               Conv2d-10           [-1, 64, 32, 32]          36,864
+          BatchNorm2d-11           [-1, 64, 32, 32]             128
+           BasicBlock-12           [-1, 64, 32, 32]               0
+               Conv2d-13          [-1, 128, 16, 16]          73,728
+          BatchNorm2d-14          [-1, 128, 16, 16]             256
+               Conv2d-15          [-1, 128, 16, 16]         147,456
+          BatchNorm2d-16          [-1, 128, 16, 16]             256
+               Conv2d-17          [-1, 128, 16, 16]           8,192
+          BatchNorm2d-18          [-1, 128, 16, 16]             256
+           BasicBlock-19          [-1, 128, 16, 16]               0
+               Conv2d-20          [-1, 128, 16, 16]         147,456
+          BatchNorm2d-21          [-1, 128, 16, 16]             256
+               Conv2d-22          [-1, 128, 16, 16]         147,456
+          BatchNorm2d-23          [-1, 128, 16, 16]             256
+           BasicBlock-24          [-1, 128, 16, 16]               0
+               Conv2d-25            [-1, 256, 8, 8]         294,912
+          BatchNorm2d-26            [-1, 256, 8, 8]             512
+               Conv2d-27            [-1, 256, 8, 8]         589,824
+          BatchNorm2d-28            [-1, 256, 8, 8]             512
+               Conv2d-29            [-1, 256, 8, 8]          32,768
+          BatchNorm2d-30            [-1, 256, 8, 8]             512
+           BasicBlock-31            [-1, 256, 8, 8]               0
+               Conv2d-32            [-1, 256, 8, 8]         589,824
+          BatchNorm2d-33            [-1, 256, 8, 8]             512
+               Conv2d-34            [-1, 256, 8, 8]         589,824
+          BatchNorm2d-35            [-1, 256, 8, 8]             512
+           BasicBlock-36            [-1, 256, 8, 8]               0
+               Conv2d-37            [-1, 512, 4, 4]       1,179,648
+          BatchNorm2d-38            [-1, 512, 4, 4]           1,024
+               Conv2d-39            [-1, 512, 4, 4]       2,359,296
+          BatchNorm2d-40            [-1, 512, 4, 4]           1,024
+               Conv2d-41            [-1, 512, 4, 4]         131,072
+          BatchNorm2d-42            [-1, 512, 4, 4]           1,024
+           BasicBlock-43            [-1, 512, 4, 4]               0
+               Conv2d-44            [-1, 512, 4, 4]       2,359,296
+          BatchNorm2d-45            [-1, 512, 4, 4]           1,024
+               Conv2d-46            [-1, 512, 4, 4]       2,359,296
+          BatchNorm2d-47            [-1, 512, 4, 4]           1,024
+           BasicBlock-48            [-1, 512, 4, 4]               0
+               Linear-49                   [-1, 10]           5,130
+    ================================================================
+    Total params: 11,173,962
+    Trainable params: 11,173,962
+    Non-trainable params: 0
+    ----------------------------------------------------------------
+    Input size (MB): 0.01
+    Forward/backward pass size (MB): 11.25
+    Params size (MB): 42.63
+    Estimated Total Size (MB): 53.89
+    ----------------------------------------------------------------
+    """
     class BasicBlock(nn.Module):
         expansion = 1
 
@@ -215,6 +357,47 @@ class ResNet(nn.Module):
 
 
 class DCGANGenerator(nn.Module):
+    """Generator of DCGAN
+    
+    >>> device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    >>> net = DCGANGenerator(10).to(device)
+    >>> summary(net , (10, ))
+    ----------------------------------------------------------------
+            Layer (type)               Output Shape         Param #
+    ================================================================
+       ConvTranspose2d-1            [-1, 512, 2, 2]          81,920
+           BatchNorm2d-2            [-1, 512, 2, 2]           1,024
+             LeakyReLU-3            [-1, 512, 2, 2]               0
+       ConvTranspose2d-4            [-1, 512, 4, 4]       4,194,304
+           BatchNorm2d-5            [-1, 512, 4, 4]           1,024
+             LeakyReLU-6            [-1, 512, 4, 4]               0
+       ConvTranspose2d-7            [-1, 512, 8, 8]       4,194,304
+           BatchNorm2d-8            [-1, 512, 8, 8]           1,024
+             LeakyReLU-9            [-1, 512, 8, 8]               0
+      ConvTranspose2d-10          [-1, 256, 16, 16]       2,097,152
+          BatchNorm2d-11          [-1, 256, 16, 16]             512
+            LeakyReLU-12          [-1, 256, 16, 16]               0
+      ConvTranspose2d-13          [-1, 128, 32, 32]         524,288
+          BatchNorm2d-14          [-1, 128, 32, 32]             256
+            LeakyReLU-15          [-1, 128, 32, 32]               0
+      ConvTranspose2d-16           [-1, 64, 64, 64]         131,072
+          BatchNorm2d-17           [-1, 64, 64, 64]             128
+            LeakyReLU-18           [-1, 64, 64, 64]               0
+               Conv2d-19            [-1, 3, 64, 64]           1,728
+                 Tanh-20            [-1, 3, 64, 64]               0
+    ================================================================
+    Total params: 11,228,736
+    Trainable params: 11,228,736
+    Non-trainable params: 0
+    ----------------------------------------------------------------
+    Input size (MB): 0.00
+    Forward/backward pass size (MB): 11.67
+    Params size (MB): 42.83
+    Estimated Total Size (MB): 54.51
+    ----------------------------------------------------------------
+
+    """
+
     def __init__(self, latent_dim, trans_conv_layer=nn.ConvTranspose2d):
         super(DCGANGenerator, self).__init__()
         self.latent_dim = latent_dim
@@ -269,10 +452,42 @@ class DCGANGenerator(nn.Module):
 
 
 class DCGANDiscriminator(nn.Module):
+    """Discriminator of DCGAN
+    
+    >>> device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    >>> net = DCGANDiscriminator().to(device)
+    >>> summary(net , (3, 64, 64))
+    ----------------------------------------------------------------
+            Layer (type)               Output Shape         Param #
+    ================================================================
+                Conv2d-1            [-1, 8, 32, 32]             384
+           BatchNorm2d-2            [-1, 8, 32, 32]              16
+             LeakyReLU-3            [-1, 8, 32, 32]               0
+                Conv2d-4           [-1, 32, 16, 16]           4,096
+           BatchNorm2d-5           [-1, 32, 16, 16]              64
+             LeakyReLU-6           [-1, 32, 16, 16]               0
+                Conv2d-7             [-1, 64, 8, 8]          32,768
+           BatchNorm2d-8             [-1, 64, 8, 8]             128
+             LeakyReLU-9             [-1, 64, 8, 8]               0
+               Conv2d-10             [-1, 64, 4, 4]          65,536
+          BatchNorm2d-11             [-1, 64, 4, 4]             128
+            LeakyReLU-12             [-1, 64, 4, 4]               0
+               Conv2d-13              [-1, 1, 1, 1]           1,024
+    ================================================================
+    Total params: 104,144
+    Trainable params: 104,144
+    Non-trainable params: 0
+    ----------------------------------------------------------------
+    Input size (MB): 0.05
+    Forward/backward pass size (MB): 0.49
+    Params size (MB): 0.40
+    Estimated Total Size (MB): 0.94
+    ----------------------------------------------------------------
+    """
     def __init__(self, down_conv_layer=nn.Conv2d, normalization="BN"):
         super(DCGANDiscriminator, self).__init__()
         if normalization == "BN":
-            norm = nn.BatchNrom2d
+            norm = nn.BatchNorm2d
         else:
             raise NotImplementedError()
 
@@ -319,6 +534,40 @@ class DCGANDiscriminator(nn.Module):
 
 
 class DCGANGeneratorCIFER10(nn.Module):
+    """Generator of DCGAN for CIFER10
+    
+    >>> device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    >>> net = DCGANGeneratorCIFER10(10).to(device)
+    >>> summary(net , (10, ))
+    ----------------------------------------------------------------
+            Layer (type)               Output Shape         Param #
+    ================================================================
+                Linear-1                 [-1, 8192]          90,112
+       ConvTranspose2d-2            [-1, 256, 8, 8]       2,097,408
+           BatchNorm2d-3            [-1, 256, 8, 8]             512
+                  ReLU-4            [-1, 256, 8, 8]               0
+          UpConvBNReLU-5            [-1, 256, 8, 8]               0
+       ConvTranspose2d-6          [-1, 128, 16, 16]         524,416
+           BatchNorm2d-7          [-1, 128, 16, 16]             256
+                  ReLU-8          [-1, 128, 16, 16]               0
+          UpConvBNReLU-9          [-1, 128, 16, 16]               0
+      ConvTranspose2d-10           [-1, 64, 32, 32]         131,136
+          BatchNorm2d-11           [-1, 64, 32, 32]             128
+                 ReLU-12           [-1, 64, 32, 32]               0
+         UpConvBNReLU-13           [-1, 64, 32, 32]               0
+               Conv2d-14            [-1, 3, 32, 32]           1,731
+                 Tanh-15            [-1, 3, 32, 32]               0
+    ================================================================
+    Total params: 2,845,699
+    Trainable params: 2,845,699
+    Non-trainable params: 0
+    ----------------------------------------------------------------
+    Input size (MB): 0.00
+    Forward/backward pass size (MB): 3.61
+    Params size (MB): 10.86
+    Estimated Total Size (MB): 14.46
+    ----------------------------------------------------------------
+    """
     class UpConvBNReLU(nn.Module):
         def __init__(self, in_channels, out_channels,
                      kernel_size, stride, padding=0,
@@ -386,6 +635,47 @@ class DCGANGeneratorCIFER10(nn.Module):
 
 
 class DCGANDiscriminatorCIFER10(nn.Module):
+    """Discriminator of DCGAN for CIFER10
+    
+    >>> device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    >>> net = DCGANDiscriminatorCIFER10().to(device)
+    >>> summary(net , (3, 32, 32))
+    ----------------------------------------------------------------
+            Layer (type)               Output Shape         Param #
+    ================================================================
+          SpectralNorm-1           [-1, 64, 32, 32]               0
+             LeakyReLU-2           [-1, 64, 32, 32]               0
+          ConvNormReLU-3           [-1, 64, 32, 32]               0
+          SpectralNorm-4           [-1, 64, 16, 16]               0
+             LeakyReLU-5           [-1, 64, 16, 16]               0
+          ConvNormReLU-6           [-1, 64, 16, 16]               0
+          SpectralNorm-7          [-1, 128, 16, 16]               0
+             LeakyReLU-8          [-1, 128, 16, 16]               0
+          ConvNormReLU-9          [-1, 128, 16, 16]               0
+         SpectralNorm-10            [-1, 128, 8, 8]               0
+            LeakyReLU-11            [-1, 128, 8, 8]               0
+         ConvNormReLU-12            [-1, 128, 8, 8]               0
+         SpectralNorm-13            [-1, 256, 8, 8]               0
+            LeakyReLU-14            [-1, 256, 8, 8]               0
+         ConvNormReLU-15            [-1, 256, 8, 8]               0
+         SpectralNorm-16            [-1, 256, 4, 4]               0
+            LeakyReLU-17            [-1, 256, 4, 4]               0
+         ConvNormReLU-18            [-1, 256, 4, 4]               0
+         SpectralNorm-19            [-1, 512, 4, 4]               0
+            LeakyReLU-20            [-1, 512, 4, 4]               0
+         ConvNormReLU-21            [-1, 512, 4, 4]               0
+               Linear-22                    [-1, 1]           8,193
+    ================================================================
+    Total params: 8,193
+    Trainable params: 8,193
+    Non-trainable params: 0
+    ----------------------------------------------------------------
+    Input size (MB): 0.01
+    Forward/backward pass size (MB): 3.47
+    Params size (MB): 0.03
+    Estimated Total Size (MB): 3.51
+    ----------------------------------------------------------------
+    """
     class ConvNormReLU(nn.Module):
         def __init__(self, in_channels, out_channels,
                      kernel_size, stride, padding=0,
@@ -471,6 +761,32 @@ class SNGANDiscriminator(nn.Module):
 
 
 class ConvVAEEncoder(nn.Module):
+    """Encoder of Convolutional VAE
+
+    >>> device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    >>> net = ConvVAEEncoder(10, device).to(device)
+    >>> summary(net , (3, 64, 64))
+    ----------------------------------------------------------------
+            Layer (type)               Output Shape         Param #
+    ================================================================
+                Conv2d-1           [-1, 16, 32, 32]             448
+                Conv2d-2           [-1, 32, 16, 16]           4,640
+                Conv2d-3             [-1, 64, 8, 8]          18,496
+                Conv2d-4             [-1, 64, 4, 4]          36,928
+                Conv2d-5             [-1, 64, 2, 2]          36,928
+                Linear-6                   [-1, 10]           2,570
+                Linear-7                   [-1, 10]           2,570
+    ================================================================
+    Total params: 102,580
+    Trainable params: 102,580
+    Non-trainable params: 0
+    ----------------------------------------------------------------
+    Input size (MB): 0.05
+    Forward/backward pass size (MB): 0.23
+    Params size (MB): 0.39
+    Estimated Total Size (MB): 0.67
+    ----------------------------------------------------------------
+    """
     def __init__(self, latent_dim, device, down_conv_layer=nn.Conv2d):
         super(ConvVAEEncoder, self).__init__()
         self.latent_dim = latent_dim
@@ -557,6 +873,31 @@ class ConvVAEEncoder(nn.Module):
 
 
 class ConvVAEDecoder(nn.Module):
+    """Decoder of Convolutional VAE
+
+    >>> device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    >>> net = ConvVAEDecoder(10).to(device)
+    >>> summary(net , (10, ))
+    ----------------------------------------------------------------
+            Layer (type)               Output Shape         Param #
+    ================================================================
+                Linear-1                  [-1, 256]           2,816
+       ConvTranspose2d-2             [-1, 64, 4, 4]          65,600
+       ConvTranspose2d-3             [-1, 64, 8, 8]          65,600
+       ConvTranspose2d-4           [-1, 32, 16, 16]          32,800
+       ConvTranspose2d-5           [-1, 16, 32, 32]           8,208
+       ConvTranspose2d-6            [-1, 3, 64, 64]             771
+    ================================================================
+    Total params: 175,795
+    Trainable params: 175,795
+    Non-trainable params: 0
+    ----------------------------------------------------------------
+    Input size (MB): 0.00
+    Forward/backward pass size (MB): 0.32
+    Params size (MB): 0.67
+    Estimated Total Size (MB): 0.99
+    ----------------------------------------------------------------
+    """
     def __init__(self, latent_dim, up_conv_layer=nn.ConvTranspose2d):
         super(ConvVAEDecoder, self).__init__()
         self.latent_dim = latent_dim
@@ -622,6 +963,107 @@ class ConvVAEDecoder(nn.Module):
 
 
 class UNet(nn.Module):
+    """ U-Net
+
+    >>> device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    >>> net = UNet(3, 10).to(device)
+    >>> summary(net , (3, 64, 64))
+    ----------------------------------------------------------------
+            Layer (type)               Output Shape         Param #
+    ================================================================
+                Conv2d-1           [-1, 64, 64, 64]           1,792
+           BatchNorm2d-2           [-1, 64, 64, 64]             128
+                  ReLU-3           [-1, 64, 64, 64]               0
+                Conv2d-4           [-1, 64, 64, 64]          36,928
+           BatchNorm2d-5           [-1, 64, 64, 64]             128
+                  ReLU-6           [-1, 64, 64, 64]               0
+           double_conv-7           [-1, 64, 64, 64]               0
+                inconv-8           [-1, 64, 64, 64]               0
+                Conv2d-9           [-1, 64, 32, 32]          36,864
+               Conv2d-10          [-1, 128, 32, 32]          73,856
+          BatchNorm2d-11          [-1, 128, 32, 32]             256
+                 ReLU-12          [-1, 128, 32, 32]               0
+               Conv2d-13          [-1, 128, 32, 32]         147,584
+          BatchNorm2d-14          [-1, 128, 32, 32]             256
+                 ReLU-15          [-1, 128, 32, 32]               0
+          double_conv-16          [-1, 128, 32, 32]               0
+                 down-17          [-1, 128, 32, 32]               0
+               Conv2d-18          [-1, 128, 16, 16]         147,456
+               Conv2d-19          [-1, 256, 16, 16]         295,168
+          BatchNorm2d-20          [-1, 256, 16, 16]             512
+                 ReLU-21          [-1, 256, 16, 16]               0
+               Conv2d-22          [-1, 256, 16, 16]         590,080
+          BatchNorm2d-23          [-1, 256, 16, 16]             512
+                 ReLU-24          [-1, 256, 16, 16]               0
+          double_conv-25          [-1, 256, 16, 16]               0
+                 down-26          [-1, 256, 16, 16]               0
+               Conv2d-27            [-1, 256, 8, 8]         589,824
+               Conv2d-28            [-1, 512, 8, 8]       1,180,160
+          BatchNorm2d-29            [-1, 512, 8, 8]           1,024
+                 ReLU-30            [-1, 512, 8, 8]               0
+               Conv2d-31            [-1, 512, 8, 8]       2,359,808
+          BatchNorm2d-32            [-1, 512, 8, 8]           1,024
+                 ReLU-33            [-1, 512, 8, 8]               0
+          double_conv-34            [-1, 512, 8, 8]               0
+                 down-35            [-1, 512, 8, 8]               0
+               Conv2d-36            [-1, 512, 4, 4]       2,359,296
+               Conv2d-37            [-1, 512, 4, 4]       2,359,808
+          BatchNorm2d-38            [-1, 512, 4, 4]           1,024
+                 ReLU-39            [-1, 512, 4, 4]               0
+               Conv2d-40            [-1, 512, 4, 4]       2,359,808
+          BatchNorm2d-41            [-1, 512, 4, 4]           1,024
+                 ReLU-42            [-1, 512, 4, 4]               0
+          double_conv-43            [-1, 512, 4, 4]               0
+                 down-44            [-1, 512, 4, 4]               0
+      ConvTranspose2d-45            [-1, 512, 8, 8]       4,194,304
+               Conv2d-46            [-1, 256, 8, 8]       2,359,552
+          BatchNorm2d-47            [-1, 256, 8, 8]             512
+                 ReLU-48            [-1, 256, 8, 8]               0
+               Conv2d-49            [-1, 256, 8, 8]         590,080
+          BatchNorm2d-50            [-1, 256, 8, 8]             512
+                 ReLU-51            [-1, 256, 8, 8]               0
+          double_conv-52            [-1, 256, 8, 8]               0
+                   up-53            [-1, 256, 8, 8]               0
+      ConvTranspose2d-54          [-1, 256, 16, 16]       1,048,576
+               Conv2d-55          [-1, 128, 16, 16]         589,952
+          BatchNorm2d-56          [-1, 128, 16, 16]             256
+                 ReLU-57          [-1, 128, 16, 16]               0
+               Conv2d-58          [-1, 128, 16, 16]         147,584
+          BatchNorm2d-59          [-1, 128, 16, 16]             256
+                 ReLU-60          [-1, 128, 16, 16]               0
+          double_conv-61          [-1, 128, 16, 16]               0
+                   up-62          [-1, 128, 16, 16]               0
+      ConvTranspose2d-63          [-1, 128, 32, 32]         262,144
+               Conv2d-64           [-1, 64, 32, 32]         147,520
+          BatchNorm2d-65           [-1, 64, 32, 32]             128
+                 ReLU-66           [-1, 64, 32, 32]               0
+               Conv2d-67           [-1, 64, 32, 32]          36,928
+          BatchNorm2d-68           [-1, 64, 32, 32]             128
+                 ReLU-69           [-1, 64, 32, 32]               0
+          double_conv-70           [-1, 64, 32, 32]               0
+                   up-71           [-1, 64, 32, 32]               0
+      ConvTranspose2d-72           [-1, 64, 64, 64]          65,536
+               Conv2d-73           [-1, 64, 64, 64]          73,792
+          BatchNorm2d-74           [-1, 64, 64, 64]             128
+                 ReLU-75           [-1, 64, 64, 64]               0
+               Conv2d-76           [-1, 64, 64, 64]          36,928
+          BatchNorm2d-77           [-1, 64, 64, 64]             128
+                 ReLU-78           [-1, 64, 64, 64]               0
+          double_conv-79           [-1, 64, 64, 64]               0
+                   up-80           [-1, 64, 64, 64]               0
+               Conv2d-81           [-1, 10, 64, 64]             650
+              outconv-82           [-1, 10, 64, 64]               0
+    ================================================================
+    Total params: 22,099,914
+    Trainable params: 22,099,914
+    Non-trainable params: 0
+    ----------------------------------------------------------------
+    Input size (MB): 0.05
+    Forward/backward pass size (MB): 58.81
+    Params size (MB): 84.30
+    Estimated Total Size (MB): 143.16
+    ----------------------------------------------------------------
+    """
     class double_conv(nn.Module):
         '''(conv => BN => ReLU) * 2'''
         def __init__(self, in_ch, out_ch):
@@ -663,12 +1105,12 @@ class UNet(nn.Module):
             return x
 
     class up(nn.Module):
-        def __init__(self, in_ch, out_ch, up_conv_layer=nn.ConvTranspose2d):
+        def __init__(self, in_ch, mid_ch, out_ch, up_conv_layer=nn.ConvTranspose2d):
             super(UNet.up, self).__init__()
             self.upconv = up_conv_layer(in_channels=in_ch, out_channels=in_ch,
                                         kernel_size=(4, 4), stride=(2, 2),
                                         padding=1, bias=False)
-            self.conv = UNet.double_conv(in_ch, out_ch)
+            self.conv = UNet.double_conv(mid_ch, out_ch)
 
         def forward(self, x1, x2):
             x1 = self.upconv(x1)
@@ -694,10 +1136,10 @@ class UNet(nn.Module):
         self.down2 = UNet.down(128, 256)
         self.down3 = UNet.down(256, 512)
         self.down4 = UNet.down(512, 512)
-        self.up1 = UNet.up(1024, 256)
-        self.up2 = UNet.up(512, 128)
-        self.up3 = UNet.up(256, 64)
-        self.up4 = UNet.up(128, 64)
+        self.up1 = UNet.up(512, 1024, 256)
+        self.up2 = UNet.up(256, 512, 128)
+        self.up3 = UNet.up(128, 256, 64)
+        self.up4 = UNet.up(64, 128, 64)
         self.outc = UNet.outconv(64, n_classes)
 
     def forward(self, x):
@@ -711,18 +1153,161 @@ class UNet(nn.Module):
         x = self.up3(x, x2)
         x = self.up4(x, x1)
         x = self.outc(x)
-        return F.sigmoid(x)
+        return torch.sigmoid(x)
 
 class ITMNet(UNet):
+    """iTM-Net
+
+    >>> device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    >>> net = ITMNet(3, 10).to(device)
+    >>> summary(net , (3, 128, 128))
+    ----------------------------------------------------------------
+            Layer (type)               Output Shape         Param #
+    ================================================================
+                Conv2d-1         [-1, 64, 128, 128]           1,792
+           BatchNorm2d-2         [-1, 64, 128, 128]             128
+                  ReLU-3         [-1, 64, 128, 128]               0
+                Conv2d-4         [-1, 64, 128, 128]          36,928
+           BatchNorm2d-5         [-1, 64, 128, 128]             128
+                  ReLU-6         [-1, 64, 128, 128]               0
+           double_conv-7         [-1, 64, 128, 128]               0
+                inconv-8         [-1, 64, 128, 128]               0
+                Conv2d-9           [-1, 64, 64, 64]          36,864
+               Conv2d-10          [-1, 128, 64, 64]          73,856
+          BatchNorm2d-11          [-1, 128, 64, 64]             256
+                 ReLU-12          [-1, 128, 64, 64]               0
+               Conv2d-13          [-1, 128, 64, 64]         147,584
+          BatchNorm2d-14          [-1, 128, 64, 64]             256
+                 ReLU-15          [-1, 128, 64, 64]               0
+          double_conv-16          [-1, 128, 64, 64]               0
+                 down-17          [-1, 128, 64, 64]               0
+               Conv2d-18          [-1, 128, 32, 32]         147,456
+               Conv2d-19          [-1, 256, 32, 32]         295,168
+          BatchNorm2d-20          [-1, 256, 32, 32]             512
+                 ReLU-21          [-1, 256, 32, 32]               0
+               Conv2d-22          [-1, 256, 32, 32]         590,080
+          BatchNorm2d-23          [-1, 256, 32, 32]             512
+                 ReLU-24          [-1, 256, 32, 32]               0
+          double_conv-25          [-1, 256, 32, 32]               0
+                 down-26          [-1, 256, 32, 32]               0
+               Conv2d-27          [-1, 256, 16, 16]         589,824
+               Conv2d-28          [-1, 512, 16, 16]       1,180,160
+          BatchNorm2d-29          [-1, 512, 16, 16]           1,024
+                 ReLU-30          [-1, 512, 16, 16]               0
+               Conv2d-31          [-1, 512, 16, 16]       2,359,808
+          BatchNorm2d-32          [-1, 512, 16, 16]           1,024
+                 ReLU-33          [-1, 512, 16, 16]               0
+          double_conv-34          [-1, 512, 16, 16]               0
+                 down-35          [-1, 512, 16, 16]               0
+               Conv2d-36            [-1, 512, 8, 8]       2,359,296
+               Conv2d-37            [-1, 512, 8, 8]       2,359,808
+          BatchNorm2d-38            [-1, 512, 8, 8]           1,024
+                 ReLU-39            [-1, 512, 8, 8]               0
+               Conv2d-40            [-1, 512, 8, 8]       2,359,808
+          BatchNorm2d-41            [-1, 512, 8, 8]           1,024
+                 ReLU-42            [-1, 512, 8, 8]               0
+          double_conv-43            [-1, 512, 8, 8]               0
+                 down-44            [-1, 512, 8, 8]               0
+               Conv2d-45          [-1, 3, 128, 128]              81
+          BatchNorm2d-46          [-1, 3, 128, 128]               6
+                 ReLU-47          [-1, 3, 128, 128]               0
+         ConvNormReLU-48          [-1, 3, 128, 128]               0
+               Conv2d-49           [-1, 64, 64, 64]           1,728
+                 down-50           [-1, 64, 64, 64]               0
+               Conv2d-51           [-1, 64, 64, 64]          36,864
+          BatchNorm2d-52           [-1, 64, 64, 64]             128
+                 ReLU-53           [-1, 64, 64, 64]               0
+         ConvNormReLU-54           [-1, 64, 64, 64]               0
+               Conv2d-55           [-1, 64, 32, 32]          36,864
+                 down-56           [-1, 64, 32, 32]               0
+               Conv2d-57           [-1, 64, 32, 32]          36,864
+          BatchNorm2d-58           [-1, 64, 32, 32]             128
+                 ReLU-59           [-1, 64, 32, 32]               0
+         ConvNormReLU-60           [-1, 64, 32, 32]               0
+               Conv2d-61           [-1, 64, 16, 16]          36,864
+                 down-62           [-1, 64, 16, 16]               0
+               Conv2d-63           [-1, 64, 16, 16]          36,864
+          BatchNorm2d-64           [-1, 64, 16, 16]             128
+                 ReLU-65           [-1, 64, 16, 16]               0
+         ConvNormReLU-66           [-1, 64, 16, 16]               0
+               Conv2d-67             [-1, 64, 8, 8]          36,864
+                 down-68             [-1, 64, 8, 8]               0
+               Conv2d-69             [-1, 64, 8, 8]          36,864
+          BatchNorm2d-70             [-1, 64, 8, 8]             128
+                 ReLU-71             [-1, 64, 8, 8]               0
+         ConvNormReLU-72             [-1, 64, 8, 8]               0
+               Conv2d-73             [-1, 64, 4, 4]          36,864
+                 down-74             [-1, 64, 4, 4]               0
+               Conv2d-75             [-1, 64, 1, 1]          65,536
+          BatchNorm2d-76             [-1, 64, 1, 1]             128
+                 ReLU-77             [-1, 64, 1, 1]               0
+         ConvNormReLU-78             [-1, 64, 1, 1]               0
+               Conv2d-79            [-1, 512, 8, 8]       2,654,720
+          BatchNorm2d-80            [-1, 512, 8, 8]           1,024
+                 ReLU-81            [-1, 512, 8, 8]               0
+               Conv2d-82            [-1, 512, 8, 8]       2,359,808
+          BatchNorm2d-83            [-1, 512, 8, 8]           1,024
+                 ReLU-84            [-1, 512, 8, 8]               0
+          double_conv-85            [-1, 512, 8, 8]               0
+               gl_cat-86            [-1, 512, 8, 8]               0
+      ConvTranspose2d-87          [-1, 512, 16, 16]       4,194,304
+               Conv2d-88          [-1, 256, 16, 16]       2,359,552
+          BatchNorm2d-89          [-1, 256, 16, 16]             512
+                 ReLU-90          [-1, 256, 16, 16]               0
+               Conv2d-91          [-1, 256, 16, 16]         590,080
+          BatchNorm2d-92          [-1, 256, 16, 16]             512
+                 ReLU-93          [-1, 256, 16, 16]               0
+          double_conv-94          [-1, 256, 16, 16]               0
+                   up-95          [-1, 256, 16, 16]               0
+      ConvTranspose2d-96          [-1, 256, 32, 32]       1,048,576
+               Conv2d-97          [-1, 128, 32, 32]         589,952
+          BatchNorm2d-98          [-1, 128, 32, 32]             256
+                 ReLU-99          [-1, 128, 32, 32]               0
+              Conv2d-100          [-1, 128, 32, 32]         147,584
+         BatchNorm2d-101          [-1, 128, 32, 32]             256
+                ReLU-102          [-1, 128, 32, 32]               0
+         double_conv-103          [-1, 128, 32, 32]               0
+                  up-104          [-1, 128, 32, 32]               0
+     ConvTranspose2d-105          [-1, 128, 64, 64]         262,144
+              Conv2d-106           [-1, 64, 64, 64]         147,520
+         BatchNorm2d-107           [-1, 64, 64, 64]             128
+                ReLU-108           [-1, 64, 64, 64]               0
+              Conv2d-109           [-1, 64, 64, 64]          36,928
+         BatchNorm2d-110           [-1, 64, 64, 64]             128
+                ReLU-111           [-1, 64, 64, 64]               0
+         double_conv-112           [-1, 64, 64, 64]               0
+                  up-113           [-1, 64, 64, 64]               0
+     ConvTranspose2d-114         [-1, 64, 128, 128]          65,536
+              Conv2d-115         [-1, 64, 128, 128]          73,792
+         BatchNorm2d-116         [-1, 64, 128, 128]             128
+                ReLU-117         [-1, 64, 128, 128]               0
+              Conv2d-118         [-1, 64, 128, 128]          36,928
+         BatchNorm2d-119         [-1, 64, 128, 128]             128
+                ReLU-120         [-1, 64, 128, 128]               0
+         double_conv-121         [-1, 64, 128, 128]               0
+                  up-122         [-1, 64, 128, 128]               0
+              Conv2d-123         [-1, 10, 128, 128]             650
+             outconv-124         [-1, 10, 128, 128]               0
+    ================================================================
+    Total params: 27,479,393
+    Trainable params: 27,479,393
+    Non-trainable params: 0
+    ----------------------------------------------------------------
+    Input size (MB): 0.19
+    Forward/backward pass size (MB): 254.71
+    Params size (MB): 104.83
+    Estimated Total Size (MB): 359.72
+    ----------------------------------------------------------------
+    """
     class ConvNormReLU(nn.Module):
         def __init__(self, in_channels, out_channels,
                      padding=1, kernel_size=(3, 3),
                      stride=(1, 1), bias=False):
             super(ITMNet.ConvNormReLU, self).__init__()
             self.conv = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels,
-                          padding, kernel_size,
-                          stride, bias),
+                nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
+                          padding=padding, kernel_size=kernel_size,
+                          stride=stride, bias=bias),
                 nn.BatchNorm2d(out_channels),
                 nn.ReLU(inplace=True),
             )
@@ -738,7 +1323,7 @@ class ITMNet(UNet):
                 ITMNet.ConvNormReLU(in_channels=in_ch, out_channels=in_ch,
                                     padding=1, kernel_size=(3, 3),
                                     stride=(1, 1), bias=False),
-                down_conv_layer(in_channels=in_ch, out_channels=in_ch,
+                down_conv_layer(in_channels=in_ch, out_channels=out_ch,
                                 padding=1, kernel_size=(3, 3),
                                 stride=(2, 2), bias=False),
             )
@@ -763,8 +1348,7 @@ class ITMNet(UNet):
         super(ITMNet, self).__init__(n_channels, n_classes,
                                      up_conv_layer, down_conv_layer)
         # global encoder
-        self.resize = F.interpolate()
-        self.g_down1 = self.down(64, 64) 
+        self.g_down1 = self.down(3, 64) 
         self.g_down2 = self.down(64, 64) 
         self.g_down3 = self.down(64, 64) 
         self.g_down4 = self.down(64, 64) 
@@ -782,7 +1366,7 @@ class ITMNet(UNet):
         lx5 = self.down4(lx4)
 
         # global encoder
-        gx1 = F.interpolate(x, size=(3, 128, 128),
+        gx1 = F.interpolate(x, size=(128, 128),
                             mode="bilinear", align_corners=False)
         gx2 = self.g_down1(gx1)
         gx3 = self.g_down2(gx2)
@@ -790,8 +1374,8 @@ class ITMNet(UNet):
         gx5 = self.g_down4(gx4)
         gx6 = self.g_down5(gx5)
         gx7 = self.g_out_conv(gx6)
-        gx8 = F.interpolate(gx7, size=x5.size()[1:],
-                            mode="nearest", align_corners=False)
+        gx8 = F.interpolate(gx7, size=lx5.size()[2:],
+                            mode="nearest")
         
         # fusing features
         x = self.gl_cat1(lx5, gx8)
@@ -802,5 +1386,5 @@ class ITMNet(UNet):
         x = self.up3(x, lx2)
         x = self.up4(x, lx1)
         x = self.outc(x)
-        return F.sigmoid(x)
+        return torch.sigmoid(x)
 
