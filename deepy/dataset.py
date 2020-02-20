@@ -96,7 +96,7 @@ class CaiMEImageDataset(VisionDataset):
         else:
             self.file_dir = Path(root) / "test"
         self.samples = self._find_images(self.file_dir)
-        if len(samples) == 0:
+        if len(self.samples) == 0:
             raise (RuntimeError("Found 0 files in subfolders of: " + self.root + "\n"))
 
     def _find_images(self, dir):
