@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "deepy"
-version = "0.0.2"
+version = "0.0.3"
 description = ""
 authors = ["popura <popura.net@gmail.com>"]
 license = "MIT"
