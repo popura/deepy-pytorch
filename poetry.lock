@@ -378,6 +378,14 @@ version = "2019.3"
 
 [[package]]
 category = "main"
+description = "RAR archive reader for Python"
+name = "rarfile"
+optional = false
+python-versions = "*"
+version = "3.1"
+
+[[package]]
+category = "main"
 description = "Python HTTP for Humans."
 name = "requests"
 optional = false
@@ -578,7 +586,7 @@ python-versions = "*"
 version = "0.1.8"
 
 [metadata]
-content-hash = "4d6113559091d867919fff73e568e8836baaaa20291e6f96c4026edb7aeb5cf4"
+content-hash = "93a9568d9f8778b027969bf61d2b1f28461437710e8bb2ce399545c4941495c9"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -845,6 +853,9 @@ python-dateutil = [
 pytz = [
     {file = "pytz-2019.3-py2.py3-none-any.whl", hash = "sha256:1c557d7d0e871de1f5ccd5833f60fb2550652da6be2693c1e02300743d21500d"},
     {file = "pytz-2019.3.tar.gz", hash = "sha256:b02c06db6cf09c12dd25137e563b31700d3b80fcc4ad23abb7a315f2789819be"},
+]
+rarfile = [
+    {file = "rarfile-3.1.tar.gz", hash = "sha256:dc1062176c529f417522af7da1291a35b85c8017464e665aabce048cfe2659b6"},
 ]
 requests = [
     {file = "requests-2.22.0-py2.py3-none-any.whl", hash = "sha256:9cf5292fcd0f598c671cfc1e0d7d1a7f13bb8085e9a590f48c010551dc6c4b31"},
