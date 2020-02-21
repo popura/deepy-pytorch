@@ -7,7 +7,7 @@ from torch.nn.parameter import Parameter
 from torch.nn.init import constant_
 import torch.nn.functional as F
 from torchvision.datasets.vision import VisionDataset
-from torchvision.datasets.folder import is_image_file
+from torchvision.datasets.folder import is_image_file, has_file_allowed_extension
 from PIL import Image
 import requests
 import rarfile
@@ -181,3 +181,57 @@ class CaiMEImageDataset(VisionDataset):
                     dst_path = root_path / 'train' / 'multi_exposure' / ('part' + str(i+1) + '_' + p.name)
                 
                 shutil.copytree(p, dst_path)
+
+HDR_IMG_EXTENSIONS = ('.hdr', '.exr', '.pfm')
+
+class HDRImageFolder(VisionDataset):
+    """A generic data loader where the images are arranged in this way:
+
+    root/train/xxx.hdr
+    root/train/xxy.exr
+    root/train/xxz.pfm
+
+    root/test/123.hdr
+    root/test/nsdf3.exr
+    root/test/asd932_.pfm
+
+    """
+    def __init__(self, root, train=True, transform=None,
+                 target_transform=None, transforms=None):
+        super(HDRImageFolder, self).__init__(root, transforms, transform, target_transform)
+
+        self.train = train
+        if train:
+            self.file_dir = Path(root) / "train"
+        else:
+            self.file_dir = Path(root) / "test"
+        self.samples = self._find_images(self.file_dir)
+        if len(self.samples) == 0:
+            raise (RuntimeError("Found 0 files in subfolders of: " + self.root + "\n"))
+
+    def _find_images(self, dir):
+        images = []
+        
+        for p in sorted((self.file_dir / "target").glob("*")):
+            if has_file_allowed_extension(str(p), HDR_IMG_EXTENSIONS):
+                images.append(str(p))
+        
+        return images
+
+    def __getitem__(self, index):
+        """
+        TODO:
+        fix it to tone map a target HDR image to an image as *img*
+
+        """
+        target_path = self.samples[index]
+        target = Image.open(target_path).convert('RGB')
+
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
+        
+        return img, target
+    
+    def __len__(self):
+        return len(self.samples)
+    
