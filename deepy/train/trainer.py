@@ -1,3 +1,4 @@
+import time
 import os
 from abc import ABCMeta
 from abc import abstractmethod
@@ -6,15 +7,83 @@ import torch
 import torch.nn as nn
 from torch import autograd
 import torch.nn.functional as F
-from torchvision.utils import save_image
-
-from deepy.util import AverageMeter, gradshow
 
 
-class Trainer(metaclass = ABCMeta):
-    @abstractmethod
-    def train(self):
-        pass
+
+class AverageMeter(object):
+    def __init__(self):
+        self.sum = 0
+        self.count = 0
+        self.average = None
+
+    def update(self, value, number=1):
+        self.sum += value * number
+        self.count += number
+        self.average = self.sum / self.count
+
+
+class Trainer(object):
+    def __init__(self,
+                 net,
+                 optimizer,
+                 criterion,
+                 dataloader,
+                 scheduler=None,
+                 init_epoch=0,
+                 device='cpu'):
+        self.net = net
+        self.optimizer = optimizer
+        self.criterion = criterion
+        self.dataloader = dataloader
+        self.scheduler = scheduler
+        self.device = device
+        self.epoch = init_epoch
+
+    def train(self, epochs, valloader=None):
+        start_time = time.time()
+        start_epoch = self.epoch
+        costs = []
+        print('-----Training Started-----')
+        for epoch in range(start_epoch, epochs):  # loop over the dataset multiple times
+            loss = self.step()
+            elapsed_time = time.time() - start_time
+            ave_required_time = elapsed_time / (epoch + 1)
+            finish_time = ave_required_time * (epochs - (epoch + 1))
+            format_str = 'Epoch: {:03d}/{:03d}'.format(epoch+1, epochs)
+            format_str + ' | '
+            format_str += 'Loss: {:.4f}'.format(loss)
+            format_str + ' | '
+            format_str += 'Time: {:02d} hour {:02.2f} min'.format(elapsed_time/60/60, elapsed_time/60)
+            format_str + ' | '
+            format_str += 'Finish after: {:02d} hour {:02.2f} min'.format(finish_time/60/60, finish_time/60)
+            print(format_str)
+            costs.append(loss)
+        print('Total Training Time: {:02d} hour {:02.2f} min'.format(elapsed_time/60))
+        print('-----Training Finished-----')
+
+        return self.net
+
+    def step(self):
+        self.net.train()
+        loss_meter = AverageMeter()
+        for inputs, labels in self.dataloader:
+            inputs = inputs.to(self.device)
+            labels = labels.to(self.device)
+
+            outputs = self.net(inputs)
+            loss = self.criterion(outputs, labels)
+
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+
+            loss_meter.update(loss.item(), number=inputs.size(0))
+
+        if self.scheduler is not None:
+            scheduler.step()
+        self.epoch += 1
+
+        return loss_meter.average
 
 
 class ClassifierTrainer(Trainer):
@@ -31,33 +100,10 @@ class ClassifierTrainer(Trainer):
         self.dataloader = dataloader
         self.device = device
 
-    def train(self):
-        self.net.train()
-
-        loss_meter = AverageMeter()
-
-        for inputs, labels in self.dataloader:
-            inputs = inputs.to(self.device)
-            labels = labels.to(self.device)
-
-            #if i % 500 == 500-1:
-            #    inputs.requires_grad_(requires_grad=True)
-
-            outputs = self.net(inputs)
-            loss = self.criterion(outputs, labels)
-
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-
-            loss_meter.update(loss.item(), number=inputs.size(0))
-
-        return loss_meter.average
-
-    def eval(self, dataloader):
+    def eval(self, dataloader, num_classes):
         self.net.eval()
-        correct = 0
-        total = 0
+        class_correct = list(0. for i in range(num_classes))
+        class_total = list(0. for i in range(num_classes))
         with torch.no_grad():
             for inputs, labels in dataloader:
                 inputs = inputs.to(self.device)
@@ -65,32 +111,16 @@ class ClassifierTrainer(Trainer):
 
                 outputs = self.net(inputs)
                 _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
-        return correct / total
+                c = (predicted == labels)
 
-    def visualize_grad(self, dataloader):
-        self.net.train()
-        inputs, labels = next(iter(dataloader))
-        inputs = inputs.to(self.device)
-        labels = labels.to(self.device)
+                for i in range(len(labels)):
+                    label = labels[i]
+                    class_correct[label] += c[i].item()
+                    class_total[label] += 1
 
-        features = list(self.net.net)
-        features = nn.ModuleList(features).eval()
-        results = []
-        x = inputs
-        for ii, model in enumerate(features):
-            x = model(x)
-            x.retain_grad()
-            results.append(x)
-
-        loss = self.criterion(x.view(inputs.size(0), -1), labels)
-        # loss.backward()
-        results[3].backward(torch.ones_like(results[3]))
-
-        for x in results:
-            if x.grad is not None:
-                gradshow(x.grad.cpu().detach())
+        class_accuracy = class_correct[i] / class_total[i]
+        total_accuracy = sum(class_correct) / sum(class_total)
+        return total_accuracy, class_accuracy
 
 
 class RegressorTrainer(Trainer):
@@ -106,26 +136,6 @@ class RegressorTrainer(Trainer):
         self.criterion = criterion
         self.dataloader = dataloader
         self.device = device
-
-    def train(self):
-        self.net.train()
-
-        loss_meter = AverageMeter()
-
-        for inputs, targets in self.dataloader:
-            inputs = inputs.to(self.device)
-            targets = targets.to(self.device)
-
-            outputs = self.net(inputs)
-            loss = self.criterion(outputs, targets)
-
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-
-            loss_meter.update(loss.item(), number=inputs.size(0))
-
-        return loss_meter.average
 
     def eval(self, dataloader):
         self.net.eval()
@@ -164,7 +174,7 @@ class GANTrainer(Trainer):
         self.latent_dim = latent_dim
         self.dsc_train_ratio = dsc_train_ratio
 
-    def train(self):
+    def step(self):
         self.net_g.train()
         self.net_d.train()
 
@@ -239,7 +249,7 @@ class WGANgpTrainer(GANTrainer):
                                             latent_dim, dsc_train_ratio)
         self.c = c
 
-    def train(self):
+    def step(self):
         self.net_g.train()
 
         loss_g_meter = AverageMeter()
@@ -342,4 +352,53 @@ class VAETrainer(Trainer):
 
             loss_meter.update(loss.item(), number=real.size(0))
 
+        return loss_meter.average
+
+
+class AutoEncoderTrainer(torchtrain.trainer.RegressorTrainer):
+    def __init__(self,
+                 net,
+                 optimizer,
+                 criterion,
+                 dataloader,
+                 device):
+        super(AutoEncoderTrainer, self).__init__(net, optimizer, criterion,
+                                                 dataloader, device)
+
+    def step(self):
+        self.net.train()
+
+        loss_meter = torchtrain.trainer.AverageMeter()
+
+        for inputs, *_ in self.dataloader:
+            targets = inputs.clone().detach()
+            inputs = inputs.to(self.device)
+            targets = targets.to(self.device)
+
+            outputs = self.net(inputs)
+            loss = self.criterion(outputs, targets)
+
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+
+            loss_meter.update(loss.item(), number=inputs.size(0))
+
+        return loss_meter.average
+
+    def eval(self, dataloader):
+        self.net.eval()
+        
+        loss_meter = torchtrain.trainer.AverageMeter()
+
+        with torch.no_grad():
+            for inputs, *_ in dataloader:
+                targets = inputs.clone().detach()
+                inputs = inputs.to(self.device)
+                targets = targets.to(self.device)
+
+                outputs = self.net(inputs)
+                loss = self.criterion(outputs, targets)
+                loss_meter.update(loss.item(), number=inputs.size(0))
+            
         return loss_meter.average
