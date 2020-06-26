@@ -1,7 +1,4 @@
-import deepy.core
-import deepy.layer
-import deepy.model
-import deepy.dataset
-import deepy.trainer
-import deepy.transform
+import deepy.nn
+import deepy.train
+import deepy.data
 import deepy.util
