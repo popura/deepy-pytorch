@@ -93,4 +93,4 @@ ENV/
 .vscode/
 
 # Downloaded dataset by deepy.dataset
-data/
+/data/
