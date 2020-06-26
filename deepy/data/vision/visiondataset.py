@@ -3,9 +3,10 @@ import os.path
 
 from PIL import Image
 
-from . import dataset
+from .. import dataset
 
 IMG_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', '.webp')
+HDR_IMG_EXTENSIONS = ('.hdr', '.exr', '.pfm')
 
 
 def pil_loader(path):
@@ -30,6 +31,10 @@ def default_loader(path):
         return accimage_loader(path)
     else:
         return pil_loader(path)
+
+
+def hdr_loader(path):
+    raise NotImplementedError
 
 
 class ImageFolder(dataset.DatasetFolder):

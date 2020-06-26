@@ -2,137 +2,21 @@ import sys
 import os
 import os.path
 import random
-import pickle
 from pathlib import Path
 
 import torch
 import torchaudio
-from torch.utils.data import Dataset
-import torchdataset
-from torchdataset.audiodataset import AUDIO_EXTENSIONS, default_loader
-from torchdataset.dataset import has_file_allowed_extension
+from .audiodataset import AUDIO_EXTENSIONS, default_loader
+from ..dataset import PureDatasetFolder, has_file_allowed_extension
 
 
-class RandomFrames(torchdataset.transform.Transform):
-    def __init__(self, n_frames=5):
-        self.n_frames = n_frames
-
-    def __call__(self, data):
-        total_frames = data.size(-1)
-        start_frame = random.randint(0, total_frames-self.n_frames)
-        end_frame = start_frame + self.n_frames
-        return data[..., start_frame:end_frame]
-
-    def __repr__(self):
-        return self.__class__.__name__ + '(n_frames={})'.format(self.n_frames)
-
-
-class Windowing(torchdataset.transform.Transform):
-    def __init__(self, n_frames=5, stride=1, n_signals=None):
-        self.n_frames = n_frames
-        if not stride == 1:
-            raise NotImplementedError
-        self.stride = stride
-        self.n_signals = n_signals
-    
-    def __call__(self, data):
-        total_frames = data.size(-1)
-
-        if self.n_signals == None:
-            n_signals = total_frames - self.n_frames + 1
-        else:
-            n_signals = self.n_signals
-
-        return torch.stack([data[..., i:i+self.n_frames] for i in range(n_signals)], dim=1)
-
-    def __repr__(self):
-        return self.__class__.__name__ + '(n_frames={}, stride={})'.format(self.n_frames, self.stride)
-
-
-class Plane2Vector(torchdataset.transform.Transform):
-    def __init__(self):
-        pass
-
-    def __call__(self, data):
-        return torch.cat([data[..., i, :] for i in range(data.size(-2))], dim=-1)
-        
-
-
-class ToVector(torchdataset.transform.Transform):
-    def __init__(self):
-        pass
-
-    def __call__(self, data):
-        return data.reshape(-1, )
-    
-    def __repr__(self):
-        return self.__class__.__name__
-
-
-class PickUpChannel(torchdataset.transform.Transform):
-    def __init__(self, chidx=0):
-        self.chidx = chidx
-
-    def __call__(self, data):
-        return data[self.chidx]
-    
-    def __repr__(self):
-        return self.__class__.__name__ + '(chidx={})'.format(self.chidx)
-
-
-PICKLE_EXTENSIONS = (".pkl")
-
-
-def pickle_loader(path):
-    """A loader for pickle files that contain a sample
-    Args:
-        path: Path to an audio track
-    
-    Returns:
-        sample: A sample
-    """
-    with open(path, 'rb') as pkl:
-        sample = pickle.load(pkl)
-    return sample
-
-
-class PickleFolder(torchdataset.dataset.DatasetFolder):
-    """A generic data loader where the pickle files are arranged in this way: ::
-        root/car/xxx.pkl
-        root/car/xxy.pkl
-        root/car/xxz.pkl
-        root/home/123.pkl
-        root/home/nsdf3.pkl
-        root/home/asd932_.pkl
-    Args:
-        root (string): Root directory path.
-        transform (callable, optional): A function/transform that  takes in an PIL image
-            and returns a transformed version. E.g, ``transforms.RandomCrop``
-        target_transform (callable, optional): A function/transform that takes in the
-            target and transforms it.
-        loader (callable, optional): A function to load an image given its path.
-        is_valid_file (callable, optional): A function that takes path of an Image file
-            and check if the file is a valid file (used to check of corrupt files)
-     Attributes:
-        classes (list): List of the class names sorted alphabetically.
-        class_to_idx (dict): Dict with items (class_name, class_index).
-        imgs (list): List of (image path, class_index) tuples
-    """
-
-    def __init__(self, root, transform=None, target_transform=None,
-                 loader=pickle_loader, is_valid_file=None):
-        super(PickleFolder, self).__init__(root, loader, PICKLE_EXTENSIONS if is_valid_file is None else None,
-                                          transform=transform,
-                                          target_transform=target_transform,
-                                          is_valid_file=is_valid_file)
-        self.pickles = self.samples
-
-
-MACHINE_NAMES = ('ToyCar', 'ToyConveyor', 'fan', 'pump', 'slider', 'valve')
-
-
-class DCASE2019Task1Dataset(torchdataset.dataset.PureDatasetFolder):
-    """
+class TAU2019(PureDatasetFolder):
+    """TAU urban acoustic scene 2019 dataset.
+       This dataset was used for DCASE 2019 Task 1.
+       For using this dataset, download the dataset from the following links:
+       https://zenodo.org/record/2589280#.XvWs0Zbgprk
+       https://zenodo.org/record/3063822#.XvWs55bgprk
+       Then, unzip them in the *root* folder.
     """
     def __init__(self, root, mode, loader=default_loader, extensions=AUDIO_EXTENSIONS,
                  transforms=None, transform=None, target_transform=None,

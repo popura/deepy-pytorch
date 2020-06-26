@@ -1,4 +1,2 @@
-import torchdataset.dataset
-import torchdataset.transform
-#import torchdataset.audiodataset
-#import torchdataset.visiondataset
+import deepy.data.dataset
+import deepy.data.transform

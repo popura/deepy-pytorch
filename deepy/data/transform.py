@@ -1,5 +1,3 @@
-
-
 class Transform(object):
     def __call__(self, *args, **kwargs):
         raise NotImplementedError()
@@ -67,6 +65,24 @@ class SeparatedTransform(Transform):
 class PairedTransform(Transform):
     def __call__(self, data, target):
         raise NotImplementedError()
+
+
+class PairedCompose(PairedTransform):
+    def __init__(self, transforms):
+        self.transforms = transforms
+
+    def __call__(self, data, target):
+        for t in self.transforms:
+            data, target = t(data, target)
+        return data, target
+    
+    def __repr__(self):
+        format_string = self.__class__.__name__ + '('
+        for t in self.transforms:
+            format_string += '\n'
+            format_string += '    {0}'.format(t)
+        format_string += '\n)'
+        return format_string
 
 
 class ToPairedTransform(PairedTransform):

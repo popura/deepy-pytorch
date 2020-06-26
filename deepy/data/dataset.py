@@ -347,7 +347,6 @@ def make_unorganized_dataset(directory, extensions=None, is_valid_file=None):
     return instances
 
 
-
 PICKLE_EXTENSIONS = (".pkl")
 
 def pickle_loader(path):
@@ -399,3 +398,40 @@ class PickleFolder(DatasetFolder):
                                           pre_transforms=pre_transforms,
                                           is_valid_file=is_valid_file)
         self.pickles = self.samples
+
+
+class SelfSupervisedDataset(torchdata.Dataset):
+
+    def __init__(self, dataset: torchdata.Dataset, transforms=None, transform=None, target_transform=None):
+        super(SelfSupervisedDataset, self).__init__()
+        self.dataset = dataset
+
+        has_transforms = transforms is not None
+        has_separate_transform = transform is not None or target_transform is not None
+        if has_transforms and has_separate_transform:
+            raise ValueError("Only transforms or transform/target_transform can "
+                             "be passed as argument")
+
+        # for backwards-compatibility
+        self.transform = transform
+        self.target_transform = target_transform
+
+        if has_separate_transform:
+            transforms = mytf.SeparatedTransform(transform, target_transform)
+        self.transforms = transforms
+
+    def __getitem__(self, index):
+        sample, *_ = self.dataset[index]
+        if isinstance(sample, torch.Tensor):
+            target = sample.detach().clone()
+        else:
+            target = sample
+        if self.transforms is not None:
+            sample, target = self.transforms(sample, target)
+        return sample, target
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __repr__(self):
+        return repr(self.dataset)

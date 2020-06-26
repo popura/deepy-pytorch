@@ -6,7 +6,7 @@ import torch
 import torch.utils.data as torchdata
 import torchaudio
 
-from . import dataset
+from .. import dataset
 
 
 AUDIO_EXTENSIONS = (".wav", ".mp3")
