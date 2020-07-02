@@ -337,3 +337,84 @@ class ConditionalBatchNorm2d(nn.Module):
         out = (gamma.view(-1, self.num_features, 1, 1) * out
                + beta.view(-1, self.num_features, 1, 1))
         return out
+
+
+class InvertibleModule(nn.Module):
+    def __init__(self, ):
+        super(InvertibleModule, self).__init__()
+    
+    def rearward(self, x):
+        raise NotImplementedError
+
+
+class Split(InvertibleModule):
+    def __init__(self, dim=-1):
+        super(Split, self).__init__()
+        self.dim = dim
+    
+    def forward(self, x):
+        padding = [0 for i in range(2*len(x.size()))]
+        padding[2*self.dim] = x.size(self.dim) % 2
+        padding = padding[::-1]
+        x = F.pad(x, padding, mode='constant', value=0)
+        even = torch.Tensor([i for i in range(0, x.size(self.dim), 2)]).to(x.device).long()
+        odd = torch.Tensor([i for i in range(1, x.size(self.dim), 2)]).to(x.device).long()
+        y1 = torch.index_select(x, dim=self.dim, index=even)
+        y2 = torch.index_select(x, dim=self.dim, index=odd)
+        return y1, y2
+    
+    def rearward(self, y1, y2):
+        y = torch.cat([y1, y2], dim=self.dim)
+        y = torch.transpose(y, self.dim, -1)
+        indices = [i for i in range(0, y.size(-1), 2)]
+        indices += [i for i in range(1, y.size(-1), 2)]
+        indices = torch.Tensor(indices).to(y1.device).long()
+        for i in reversed(range(0, len(y.size())-1)):
+            indices = torch.stack([indices for i in range(y.size(i))])
+        _, indices = torch.sort(indices, dim=-1)
+        x = torch.gather(y, dim=-1, index=indices)
+        return torch.transpose(x, self.dim, -1)
+
+
+class Join(InvertibleModule):
+    def __init__(self, dim=-1):
+        super(Join, self).__init__()
+        self.dim = dim
+        self.splitter = Split(dim=self.dim)
+    
+    def forward(self, x1, x2):
+        return self.splitter.rearward(x1, x2)
+    
+    def rearward(self, y):
+        return self.splitter.forward(y)
+
+
+class Lift(InvertibleModule):
+    def __init__(self, f: nn.Module, g: nn.Module):
+        super(Lift, self).__init__()
+        self.f = f
+        self.g = g
+
+    def forward(self, x1, x2):
+        y2 = x2 - self.f(x1)
+        y1 = x1 + self.g(y2)
+        return y1, y2
+
+    def rearward(self, y1, y2):
+        x1 = y1 - self.g(y2)
+        x2 = y2 + self.f(x1)
+        return x1, x2
+
+
+class Drop(InvertibleModule):
+    def __init__(self, f: nn.Module, g: nn.Module):
+        super(Drop, self).__init__()
+        self.f = f
+        self.g = g
+        self.lift = Lift(f, g)
+    
+    def forward(self, x1, x2):
+        return self.lift.rearward(x1, x2)
+    
+    def rearward(self, y1, y2):
+        return self.lift.forward(y1, y2)
