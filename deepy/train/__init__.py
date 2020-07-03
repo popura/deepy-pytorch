@@ -1,1 +1,1 @@
-import torchtrain.trainer
+import deepy.train.trainer

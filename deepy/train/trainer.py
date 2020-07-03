@@ -9,7 +9,6 @@ from torch import autograd
 import torch.nn.functional as F
 
 
-
 class AverageMeter(object):
     def __init__(self):
         self.sum = 0
@@ -355,7 +354,7 @@ class VAETrainer(Trainer):
         return loss_meter.average
 
 
-class AutoEncoderTrainer(torchtrain.trainer.RegressorTrainer):
+class AutoEncoderTrainer(RegressorTrainer):
     def __init__(self,
                  net,
                  optimizer,
