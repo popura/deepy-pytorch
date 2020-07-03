@@ -94,3 +94,21 @@ class ToPairedTransform(PairedTransform):
 
     def __repr__(self):
         return self.__class__.__name__ + '({})'.format(self.transform)
+
+
+class Lambda(Transform):
+    """Apply a user-defined lambda as a transform.
+
+    Args:
+        lambd (function): Lambda/function to be used for transform.
+    """
+
+    def __init__(self, lambd):
+        assert callable(lambd), repr(type(lambd).__name__) + " object is not callable"
+        self.lambd = lambd
+
+    def __call__(self, data):
+        return self.lambd(data)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
