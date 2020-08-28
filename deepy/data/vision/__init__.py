@@ -1,3 +1,3 @@
 from . import visiondataset
+from .caimef import CaiMEImageDataset
 from . import transform
-from .dcase2020task2 import DCASE2020Task2

@@ -14,7 +14,7 @@ import kornia.filters
 
 from .transform import Transform, SeparatedTransform
 from .transform import PairedTransform, PairedCompose, ToPairedTransform
-from ..nn.functional as myF
+from ..nn import functional as myF
 
 
 _pil_interpolation_to_str = {
