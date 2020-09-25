@@ -386,8 +386,8 @@ class SelfSupervisedDataset(torchdata.Dataset):
 
 class InverseDataset(torchdata.Dataset):
 
-    def __init__(self, dataset: torch.Dataset, transforms=None, transform=None, target_transform=None):
-        super(SelfSupervisedDataset, self).__init__()
+    def __init__(self, dataset: torchdata.Dataset, transforms=None, transform=None, target_transform=None):
+        super(InverseDataset, self).__init__()
         self.dataset = dataset
 
         has_transforms = transforms is not None

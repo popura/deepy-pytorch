@@ -7,9 +7,9 @@ import torch.nn as nn
 from torch.nn.parameter import Parameter
 from torch.nn.init import constant_
 import torch.nn.functional as F
-import torchdataset
-from torchdataset.dataset import PureDatasetFolder, has_file_allowed_extension
-from torchdataset.visiondataset import IMG_EXTENSIONS
+import deepy.data.dataset
+from deepy.data.dataset import PureDatasetFolder, has_file_allowed_extension
+from deepy.data.vision.visiondataset import IMG_EXTENSIONS
 from PIL import Image
 
 
