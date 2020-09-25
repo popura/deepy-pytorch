@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from deepy.nn.model import UNet, SEUNet
+
 
 class ITMNet(UNet):
     """iTM-Net
