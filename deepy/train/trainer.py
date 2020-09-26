@@ -59,9 +59,9 @@ class Trainer(object):
                 for k, v in vallosses.items():
                     format_str += '{}: {:.4f}'.format(k, v)
                     format_str + ' | '
-            format_str += 'time: {:02d} hour {:02.2f} min'.format(elapsed_time/60/60, elapsed_time/60)
+            format_str += 'time: {:02d} hour {:02.2f} min'.format(int(elapsed_time/60/60), elapsed_time/60)
             format_str + ' | '
-            format_str += 'finish after: {:02d} hour {:02.2f} min'.format(finish_time/60/60, finish_time/60)
+            format_str += 'finish after: {:02d} hour {:02.2f} min'.format(int(finish_time/60/60), finish_time/60)
             print(format_str)
         print('Total training time: {:02d} hour {:02.2f} min'.format(elapsed_time/60))
         print('-----Training Finished-----')
