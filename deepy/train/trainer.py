@@ -85,7 +85,7 @@ class Trainer(object):
             loss_meter.update(loss.item(), number=inputs.size(0))
 
         if self.scheduler is not None:
-            scheduler.step()
+            self.scheduler.step()
         self.epoch += 1
         ave_loss= loss_meter.average
         self.history["trainloss"].append({'epoch':self.epoch, 'loss':ave_loss})
