@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchsummary import summary
-from deepy import layer
+from deepy.nn import layer
 
 
 class ResNet(nn.Module):
