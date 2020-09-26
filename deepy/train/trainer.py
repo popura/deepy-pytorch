@@ -52,16 +52,16 @@ class Trainer(object):
             ave_required_time = elapsed_time / (epoch + 1)
             finish_time = ave_required_time * (epochs - (epoch + 1))
             format_str = 'epoch: {:03d}/{:03d}'.format(epoch+1, epochs)
-            format_str + ' | '
+            format_str += ' | '
             format_str += 'loss: {:.4f}'.format(loss)
-            format_str + ' | '
+            format_str += ' | '
             if vallosses is not None:
                 for k, v in vallosses.items():
                     format_str += '{}: {:.4f}'.format(k, v)
-                    format_str + ' | '
-            format_str += 'time: {:02d} hour {:02.2f} min'.format(int(elapsed_time/60/60), elapsed_time/60)
-            format_str + ' | '
-            format_str += 'finish after: {:02d} hour {:02.2f} min'.format(int(finish_time/60/60), finish_time/60)
+                    format_str += ' | '
+            format_str += 'time: {:02d} hour {:02.2f} min'.format(int(elapsed_time/60/60), elapsed_time/60%60)
+            format_str += ' | '
+            format_str += 'finish after: {:02d} hour {:02.2f} min'.format(int(finish_time/60/60), finish_time/60%60)
             print(format_str)
         print('Total training time: {:02d} hour {:02.2f} min'.format(elapsed_time/60))
         print('-----Training Finished-----')
