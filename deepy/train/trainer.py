@@ -37,27 +37,33 @@ class Trainer(object):
         self.scheduler = scheduler
         self.device = device
         self.epoch = init_epoch
+        self.history = {}
 
-    def train(self, epochs, valloader=None):
+    def train(self, epochs, *args, **kwargs):
         start_time = time.time()
         start_epoch = self.epoch
-        costs = []
+        self.history["trainloss"] = []
+        self.history["vallosses"] = []
         print('-----Training Started-----')
         for epoch in range(start_epoch, epochs):  # loop over the dataset multiple times
-            loss = self.step()
+            loss = self.step() # loss is a scalar
+            vallosses = self.eval(*args, **kwargs) # vallosses is a dictionary {str: value}
             elapsed_time = time.time() - start_time
             ave_required_time = elapsed_time / (epoch + 1)
             finish_time = ave_required_time * (epochs - (epoch + 1))
-            format_str = 'Epoch: {:03d}/{:03d}'.format(epoch+1, epochs)
+            format_str = 'epoch: {:03d}/{:03d}'.format(epoch+1, epochs)
             format_str + ' | '
-            format_str += 'Loss: {:.4f}'.format(loss)
+            format_str += 'loss: {:.4f}'.format(loss)
             format_str + ' | '
-            format_str += 'Time: {:02d} hour {:02.2f} min'.format(elapsed_time/60/60, elapsed_time/60)
+            if vallosses is not None:
+                for k, v in vallosses.items():
+                    format_str += '{}: {:.4f}'.format(k, v)
+                    format_str + ' | '
+            format_str += 'time: {:02d} hour {:02.2f} min'.format(elapsed_time/60/60, elapsed_time/60)
             format_str + ' | '
-            format_str += 'Finish after: {:02d} hour {:02.2f} min'.format(finish_time/60/60, finish_time/60)
+            format_str += 'finish after: {:02d} hour {:02.2f} min'.format(finish_time/60/60, finish_time/60)
             print(format_str)
-            costs.append(loss)
-        print('Total Training Time: {:02d} hour {:02.2f} min'.format(elapsed_time/60))
+        print('Total training time: {:02d} hour {:02.2f} min'.format(elapsed_time/60))
         print('-----Training Finished-----')
 
         return self.net
@@ -81,8 +87,13 @@ class Trainer(object):
         if self.scheduler is not None:
             scheduler.step()
         self.epoch += 1
+        ave_loss= loss_meter.average
+        self.history["trainloss"].append({'epoch':self.epoch, 'loss':ave_loss})
 
-        return loss_meter.average
+        return ave_loss
+
+    def eval(self, dataloader=None):
+        return None
 
 
 class ClassifierTrainer(Trainer):
@@ -91,13 +102,13 @@ class ClassifierTrainer(Trainer):
                  optimizer,
                  criterion,
                  dataloader,
-                 device):
-        super(ClassifierTrainer, self).__init__()
-        self.net = net
-        self.optimizer = optimizer
-        self.criterion = criterion
-        self.dataloader = dataloader
-        self.device = device
+                 scheduler=None,
+                 init_epoch=0,
+                 device='cpu'):
+        super(ClassifierTrainer, self).__init__(
+            net, optimizer, criterion, dataloader,
+            scheduler=scheduler, init_epoch=init_epoch,
+            device=device)
 
     def eval(self, dataloader, num_classes):
         self.net.eval()
@@ -117,7 +128,7 @@ class ClassifierTrainer(Trainer):
                     class_correct[label] += c[i].item()
                     class_total[label] += 1
 
-        class_accuracy = class_correct[i] / class_total[i]
+        class_accuracy = class_correct / class_total
         total_accuracy = sum(class_correct) / sum(class_total)
         return total_accuracy, class_accuracy
 
@@ -128,13 +139,13 @@ class RegressorTrainer(Trainer):
                  optimizer,
                  criterion,
                  dataloader,
-                 device):
-        super(RegressorTrainer, self).__init__()
-        self.net = net
-        self.optimizer = optimizer
-        self.criterion = criterion
-        self.dataloader = dataloader
-        self.device = device
+                 scheduler=None,
+                 init_epoch=0,
+                 device='cpu'):
+        super(RegressorTrainer, self).__init__(
+            net, optimizer, criterion, dataloader,
+            scheduler=scheduler, init_epoch=init_epoch,
+            device=device)
 
     def eval(self, dataloader):
         self.net.eval()
@@ -150,7 +161,9 @@ class RegressorTrainer(Trainer):
                 loss = self.criterion(outputs, targets)
                 loss_meter.update(loss.item(), number=inputs.size(0))
             
-        return loss_meter.average
+        ave_loss = loss_meter.average
+        self.history["vallosses"].append({'epoch':self.epoch, 'loss':ave_loss})
+        return {'val. loss': ave_loss}
 
 
 class GANTrainer(Trainer):
