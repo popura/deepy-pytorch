@@ -12,8 +12,8 @@ from torchvision.transforms import RandomResizedCrop
 from PIL import Image, ImageFilter
 import kornia.filters
 
-from .transform import Transform, SeparatedTransform
-from .transform import PairedTransform, PairedCompose, ToPairedTransform
+from deepy.data.transform import Transform, SeparatedTransform
+from deepy.data.transform import PairedTransform, PairedCompose, ToPairedTransform
 from ..nn import functional as myF
 
 
