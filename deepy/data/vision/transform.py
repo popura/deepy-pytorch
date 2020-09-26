@@ -14,7 +14,7 @@ import kornia.filters
 
 from deepy.data.transform import Transform, SeparatedTransform
 from deepy.data.transform import PairedTransform, PairedCompose, ToPairedTransform
-from ..nn import functional as myF
+from deepy.nn import functional as myF
 
 
 _pil_interpolation_to_str = {
@@ -171,7 +171,7 @@ class WLSFilterResidual(WLSFilter):
         return img - out 
 
 
-class GaussianBlur(torchdataset.transform.Transform):
+class GaussianBlur(Transform):
     """Filter image with a Gaussian kernel
 
     Args:
@@ -211,7 +211,7 @@ class GaussianBlurResidual(GaussianBlur):
         return img - out 
 
 
-class Quantize(torchdataset.transform.Transform):
+class Quantize(Transform):
     def __init__(self, n_bits=8):
         super(Quantize, self).__init__()
         self.n_bits = n_bits
@@ -224,7 +224,7 @@ class Quantize(torchdataset.transform.Transform):
         return self.__class__.__name__ + '(n bits={0})'.format(self.n_bits)
 
 
-class RandomQuantize(torchdataset.transform.Transform):
+class RandomQuantize(Transform):
     def __init__(self, min_val=0.25, max_val=4, n_bits=8):
         super(RandomQuantize, self).__init__()
         self.min_val = min_val
