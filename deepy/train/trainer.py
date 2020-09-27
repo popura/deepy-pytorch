@@ -63,7 +63,7 @@ class Trainer(object):
             format_str += ' | '
             format_str += 'finish after: {:02d} hour {:02.2f} min'.format(int(finish_time/60/60), finish_time/60%60)
             print(format_str)
-        print('Total training time: {:02d} hour {:02.2f} min'.format(elapsed_time/60))
+        print('Total training time: {:02d} hour {:02.2f} min'.format(int(elapsed_time/60/60), elapsed_time/60%60))
         print('-----Training Finished-----')
 
         return self.net
