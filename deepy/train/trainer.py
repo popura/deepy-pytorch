@@ -46,12 +46,19 @@ class Trainer(object):
         self.history["vallosses"] = []
         print('-----Training Started-----')
         for epoch in range(start_epoch, epochs):  # loop over the dataset multiple times
-            loss = self.step() # loss is a scalar
-            vallosses = self.eval(*args, **kwargs) # vallosses is a dictionary {str: value}
+            # loss is a scalar and self.epoch is incremented in this function
+            # (i.e. self.epoch = epoch + 1)
+            loss = self.step()
+            # vallosses is a dictionary {str: value}
+            vallosses = self.eval(*args, **kwargs)
             elapsed_time = time.time() - start_time
-            ave_required_time = elapsed_time / (epoch + 1)
-            finish_time = ave_required_time * (epochs - (epoch + 1))
-            format_str = 'epoch: {:03d}/{:03d}'.format(epoch+1, epochs)
+
+            self.history["trainloss"].append({'epoch':self.epoch, 'loss':ave_loss})
+            self.history["vallosses"].append({'epoch':self.epoch}.update(vallosses))
+
+            ave_required_time = elapsed_time / self.epoch
+            finish_time = ave_required_time * (epochs - self.epoch)
+            format_str = 'epoch: {:03d}/{:03d}'.format(self.epoch, epochs)
             format_str += ' | '
             format_str += 'loss: {:.4f}'.format(loss)
             format_str += ' | '
@@ -88,7 +95,6 @@ class Trainer(object):
             self.scheduler.step()
         self.epoch += 1
         ave_loss= loss_meter.average
-        self.history["trainloss"].append({'epoch':self.epoch, 'loss':ave_loss})
 
         return ave_loss
 
@@ -110,10 +116,10 @@ class ClassifierTrainer(Trainer):
             scheduler=scheduler, init_epoch=init_epoch,
             device=device)
 
-    def eval(self, dataloader, num_classes):
+    def eval(self, dataloader, classes):
         self.net.eval()
-        class_correct = list(0. for i in range(num_classes))
-        class_total = list(0. for i in range(num_classes))
+        class_correct = list(0. for i in range(len(classes)))
+        class_total = list(0. for i in range(len(classes)))
         with torch.no_grad():
             for inputs, labels in dataloader:
                 inputs = inputs.to(self.device)
@@ -130,7 +136,10 @@ class ClassifierTrainer(Trainer):
 
         class_accuracy = class_correct / class_total
         total_accuracy = sum(class_correct) / sum(class_total)
-        return total_accuracy, class_accuracy
+
+        hist_dict = {'total acc': total_accuracy}
+        hist_dict.update({classes[i]: class_accuracy[i] for i in range(len(classes))})
+        return hist_dict
 
 
 class RegressorTrainer(Trainer):
@@ -162,7 +171,6 @@ class RegressorTrainer(Trainer):
                 loss_meter.update(loss.item(), number=inputs.size(0))
             
         ave_loss = loss_meter.average
-        self.history["vallosses"].append({'epoch':self.epoch, 'loss':ave_loss})
         return {'val. loss': ave_loss}
 
 

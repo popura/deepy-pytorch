@@ -23,10 +23,10 @@ class TAU2019(PureDatasetFolder):
                  is_valid_file=None,
                  pre_load=False, pre_transform=None,
                  pre_target_transform=None, pre_transforms=None):
-        super(DCASE2019Task1Dataset, self).__init__(root,
-                                                    transforms=transforms,
-                                                    transform=transform,
-                                                    target_transform=target_transform)
+        super(TAU2019, self).__init__(root,
+                                      transforms=transforms,
+                                      transform=transform,
+                                      target_transform=target_transform)
         self.MODES = ('train', 'evaluate', 'test')
 
         if mode not in self.MODES:

@@ -112,3 +112,16 @@ class Lambda(Transform):
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
+
+
+class Pad(Transform):
+    def __init__(self, pad, mode='constant', value=0):
+        self.pad = pad
+        self.mode = mode
+        self.value = value
+    
+    def __call__(self, data):
+        return torch.nn.functional.pad(data, self.pad, self.mode, self.value)
+    
+    def __repr__(self):
+        return self.__class__.__name__ + '(pad={}, mode={}, value={})'.format(self.pad, self.mode, self.value)
