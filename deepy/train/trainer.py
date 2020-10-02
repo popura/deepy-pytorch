@@ -134,7 +134,7 @@ class ClassifierTrainer(Trainer):
                     class_correct[label] += c[i].item()
                     class_total[label] += 1
 
-        class_accuracy = class_correct / class_total
+        class_accuracy = [c / t for c, t in zip(class_correct, class_total)]
         total_accuracy = sum(class_correct) / sum(class_total)
 
         hist_dict = {'total acc': total_accuracy}
