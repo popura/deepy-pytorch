@@ -53,7 +53,7 @@ class Trainer(object):
             vallosses = self.eval(*args, **kwargs)
             elapsed_time = time.time() - start_time
 
-            self.history["trainloss"].append({'epoch':self.epoch, 'loss':ave_loss})
+            self.history["trainloss"].append({'epoch':self.epoch, 'loss':loss})
             self.history["vallosses"].append({'epoch':self.epoch}.update(vallosses))
 
             ave_required_time = elapsed_time / self.epoch
