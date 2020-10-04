@@ -133,8 +133,8 @@ class _UNetNd(nn.Module):
             [
                 _UNetNd.up(
                     in_channels=min(base_channels*(2**(i+1)), max_channels),
-                    mid_channels=min(base_channels*(2**(i+1)), max_channels),
-                    out_channels=max(min(base_channels*(2**(i+1)), max_channels)//2, base_channels),
+                    mid_channels=min(base_channels*(2**i), max_channels)*2,
+                    out_channels=max(min(base_channels*(2**i), max_channels), base_channels),
                     conv=conv,
                     up_conv=up_conv,
                     normalization=normalization,
