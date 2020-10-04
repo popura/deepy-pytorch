@@ -222,6 +222,7 @@ class _InvertibleUNetNd(InvertibleModule):
                                                     activation=activation) 
 
         def forward(self, x):
+            # TODO: fix here
             x_list = list(self.split(x))
             x1 = torch.cat(x_list[:len(x_list)//2], dim=1)
             x2 = torch.cat(x_list[len(x_list)//2:], dim=1)
@@ -229,6 +230,7 @@ class _InvertibleUNetNd(InvertibleModule):
             return x1, x2
         
         def rearward(self, x1, x2):
+            # TODO: fix here
             x1, x2 = self.conv.rearward(x1, x2)
             xx, xy = torch.chunk(x1, 2, dim=1)
             yx, yy = torch.chunk(x2, 2, dim=1)
@@ -246,6 +248,7 @@ class _InvertibleUNetNd(InvertibleModule):
                                                     padding=padding,
                                                     activation=activation) 
         def forward(self, x1, x2):
+            # TODO: fix here
             x1, x2 = self.conv(x1, x2)
             xx, xy = torch.chunk(x1, 2, dim=1)
             yx, yy = torch.chunk(x2, 2, dim=1)
@@ -253,33 +256,35 @@ class _InvertibleUNetNd(InvertibleModule):
             return x
 
         def rearward(self, x):
+            # TODO: fix here
             xx, xy, yx, yy = self.join.rearward(x)
             x1 = torch.cat([xx, xy], dim=1)
             x2 = torch.cat([yx, yy], dim=1)
             x1, x2 = self.conv.rearward(x1, x2)
             return x1, x2
 
-    def __init__(self, in_channels: int, out_channels: int,
-                 base_channels: int, depth: int,
+    def __init__(self, in_channels: int, dim: int, depth: int,
                  conv, up_conv, down_conv,
                  normalization,
                  max_channels: int=512,
                  activation=nn.ReLU,
                  final_activation=nn.Identity):
-        super(_UNetNd, self).__init__()
+        super(_InvertibleUNetNd, self).__init__()
+        if in_channels % 2 == 1:
+            raise ValueError("n_channels should be a multiple of 2")
+        self.base_channels = in_channels
         self.depth = depth
-        self.inc = _UNetNd.inconv(in_channels=in_channels,
-                                  out_channels=base_channels,
-                                  conv=conv,
-                                  normalization=normalization,
-                                  kernel_size=3,
-                                  padding=1,
-                                  activation=activation)
+        self.inc = _InvertibleUNetNd.inconv(
+            in_channels=in_channels,
+            conv=conv,
+            normalization=normalization,
+            kernel_size=3,
+            padding=1,
+            activation=activation)
         self.down_blocks = nn.ModuleList(
             [
-                _UNetNd.down(
+                _InvertibleUNetNd.down(
                     in_channels=min(base_channels*(2**i), max_channels),
-                    out_channels=min(base_channels*(2**(i+1)), max_channels),
                     conv=conv,
                     down_conv=down_conv,
                     normalization=normalization,
@@ -292,10 +297,8 @@ class _InvertibleUNetNd(InvertibleModule):
         )
         self.up_blocks = nn.ModuleList(
             [
-                _UNetNd.up(
+                _InvertibleUNetNd.up(
                     in_channels=min(base_channels*(2**(i+1)), max_channels),
-                    mid_channels=min(base_channels*(2**(i+1)), max_channels),
-                    out_channels=max(min(base_channels*(2**(i+1)), max_channels)//2, base_channels),
                     conv=conv,
                     up_conv=up_conv,
                     normalization=normalization,
@@ -306,22 +309,34 @@ class _InvertibleUNetNd(InvertibleModule):
                 for i in reversed(range(depth))
             ]
         )
-        self.outc = _UNetNd.outconv(in_channels=base_channels,
-                                    out_channels=out_channels,
-                                    conv=conv,
-                                    kernel_size=1,
-                                    padding=0,
-                                    activation=final_activation)
+        self.outc = _InvertibleUNetNd.outconv(
+            in_channels=base_channels,
+            out_channels=out_channels,
+            conv=conv,
+            kernel_size=1,
+            padding=0,
+            activation=final_activation)
 
     def forward(self, x):
         skip_connections = []
         x = self.inc(x)
         for l in self.down_blocks:
-            skip_connections.append(x)
-            x = l(x)
+            x, y = l(x)
+            skip_connections.append(y)
         for l in self.up_blocks:
             x = l(x, skip_connections.pop())
         x = self.outc(x)
+        return x
+    
+    def rearward(self, x):
+        skip_connections = []
+        x = self.outc.rearward(x)
+        for l in self.up_blocks:
+            x, y = l.rearward(x)
+            skip_connections.append(y)
+        for l in self.up_blocks:
+            x = l.rearward(x, skip_connections.pop())
+        x = self.inc.rearward(x)
         return x
 
 
