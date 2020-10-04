@@ -1,8 +1,328 @@
+import copy
+from typing import List
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchsummary import summary
 from deepy.nn.layer import InvertibleModule, Split, Join, Lift, Drop
+
+
+class _InvertibleUNetNd(InvertibleModule):
+    class double_conv(nn.Module):
+        '''(conv => BN => ReLU) * 2'''
+        def __init__(self, in_channels: int, out_channels: int, conv,
+                     normalization, kernel_size=3, padding=1, activation=nn.ReLU):
+            super(_InvertibleUNetNd.double_conv, self).__init__()
+            self.conv = nn.Sequential(
+                conv(in_channels=in_channels,
+                     out_channels=out_channels,
+                     kernel_size=kernel_size,
+                     padding=padding,
+                     bias=False),
+                normalization(out_channels),
+                activation(),
+                conv(in_channels=out_channels,
+                     out_channels=out_channels,
+                     kernel_size=kernel_size,
+                     padding=padding,
+                     bias=False),
+                normalization(out_channels),
+                activation()
+            )
+
+        def forward(self, x):
+            x = self.conv(x)
+            return x
+
+    class lift_conv(InvertibleModule):
+        def __init__(self, in_channels: int, conv, normalization,
+                     kernel_size=3, padding=1, activation=nn.ReLU):
+            super(_InvertibleUNetNd.lift_conv, self).__init__()
+            self.f = _InvertibleUNetNd.double_conv(
+                in_channels=in_channels,
+                out_channels=in_channels,
+                conv=conv,
+                normalization=normalization,
+                kernel_size=kernel_size,
+                padding=padding,
+                activation=activation
+            )
+            self.g = _InvertibleUNetNd.double_conv(
+                in_channels=in_channels,
+                out_channels=in_channels,
+                conv=conv,
+                normalization=normalization,
+                kernel_size=kernel_size,
+                padding=padding,
+                activation=activation
+            )
+            self.lift = Lift(self.f, self.g)
+        
+        def forward(self, x1, x2):
+            return self.lift.forward(x1, x2)
+        
+        def rearward(self, y1, y2):
+            return self.lift.rearward(y1, y2)
+
+    class drop_conv(InvertibleModule):
+        def __init__(self, in_channels: int, conv, normalization,
+                     kernel_size=3, padding=1, activation=nn.ReLU):
+            super(_InvertibleUNetNd.drop_conv, self).__init__()
+            self.f = _InvertibleUNetNd.double_conv(
+                in_channels=in_channels,
+                out_channels=in_channels,
+                conv=conv,
+                normalization=normalization,
+                kernel_size=kernel_size,
+                padding=padding,
+                activation=activation
+            )
+            self.g = _InvertibleUNetNd.double_conv(
+                in_channels=in_channels,
+                out_channels=in_channels,
+                conv=conv,
+                normalization=normalization,
+                kernel_size=kernel_size,
+                padding=padding,
+                activation=activation
+            )
+            self.drop = Drop(self.f, self.g)
+        
+        def forward(self, x1, x2):
+            return self.drop.forward(x1, x2)
+        
+        def rearward(self, y1, y2):
+            return self.drop.rearward(y1, y2)
+
+    class inconv(InvertibleModule):
+        def __init__(self, in_channels: int, conv,
+                     normalization, kernel_size=3, padding=1, activation=nn.ReLU):
+            super(_InvertibleUNetNd.inconv, self).__init__()
+            self.f = _InvertibleUNetNd.double_conv(
+                in_channels=in_channels//2,
+                out_channels=in_channels//2,
+                conv=conv,
+                normalization=normalization,
+                kernel_size=kernel_size,
+                padding=padding,
+                activation=activation
+            )
+            self.g = _InvertibleUNetNd.double_conv(
+                in_channels=in_channels//2,
+                out_channels=in_channels//2,
+                conv=conv,
+                normalization=normalization,
+                kernel_size=kernel_size,
+                padding=padding,
+                activation=activation
+            )
+            self.lift = Lift(self.f, self.g)
+            self.in_channels = in_channels
+        
+        def forward(self, x):
+            x1, x2 = torch.chunk(x, 2, dim=1)
+            x1, x2 = self.lift(x1, x2)
+            return torch.cat([x1, x2], dim=1)
+            
+        def rearward(self, y):
+            x1, x2 = torch.chunk(y, 2, dim=1)
+            x1, x2 = self.lift.rearward(x1, x2)
+            return torch.cat([x1, x2], dim=1)
+
+    class outconv(InvertibleModule):
+        def __init__(self, in_channels: int, conv,
+                     normalization, kernel_size=3, padding=1, activation=nn.ReLU):
+            super(InvertibleUNet.outconv, self).__init__()
+            self.f = nn.Sequential(
+                conv(in_channels=in_channels//2,
+                     out_channels=in_channels//2,
+                     kernel_size=kernel_size,
+                     padding=padding,
+                     bias=False),
+                activation()
+            )
+            self.g = nn.Sequential(
+                conv(in_channels=in_channels//2,
+                     out_channels=in_channels//2,
+                     kernel_size=kernel_size,
+                     padding=padding,
+                     bias=False),
+                activation()
+            )
+            self.lift = Lift(self.f, self.g)
+        
+        def forward(self, x):
+            x1, x2 = torch.chunk(x, 2, dim=1)
+            x1, x2 = self.lift.forward(x1, x2)
+            return torch.cat([x1, x2], dim=1)
+        
+        def rearward(self, y):
+            x1, x2 = torch.chunk(y, 2, dim=1)
+            x1, x2 = self.lift.rearward(x1, x2)
+            return torch.cat([x1, x2], dim=1)
+
+    class _split(InvertibleModule):
+        def __init__(self, dim):
+            super(_InvertibleUNetNd._split, self).__init__()
+            self.splitters = nn.ModuleList([Split(dim=-i) for in range(1, dim+1)])
+
+        def forward(self, x):
+            in_list = [x]
+            for s in self.splitters:
+                out_list = []
+                for i in in_list:
+                    out_list.extend(s(i))
+                in_list = copy.copy(out_list)
+
+            return tuple(out_list)
+        
+        def rearward(self, *args):
+            in_list = list(args)
+            for s in reversed(self.splitters):
+                out_list = []
+                for i in range(0, len(in_list), 2):
+                    out_list.append(s.rearward(in_list[i], in_list[i+1]))
+                in_list = copy.copy(out_list)
+            return out_list[0]
+
+    class _join(InvertibleModule):
+        def __init__(self, dim):
+            super(_InvertibleUNetNd._join, self).__init__()
+            self.joiners = nn.ModuleList([Join(dim=-i) for in range(1, dim+1)])
+
+        def forward(self, *args):
+            in_list = list(args)
+            for j in reversed(self.joiners):
+                out_list = []
+                for i in range(0, len(in_list), 2):
+                    out_list.append(j(in_list[i], in_list[i+1]))
+                in_list = copy.copy(out_list)
+            return out_list[0]
+
+        def rearward(self, x):
+            in_list = [x]
+            for j in self.joiners:
+                out_list = []
+                for i in in_list:
+                    out_list.extend(j.rearward(i))
+                in_list = copy.copy(out_list)
+
+            return tuple(out_list)
+        
+    class down(InvertibleModule):
+        def __init__(self, in_channels, dim, conv, normalization,
+                     kernel_size=3, padding=1, activation=nn.ReLU):
+            super(_InvertibleUNetNd.down, self).__init__()
+            self.split = _InvertibleUNetNd._split(dim=dim)
+            self.conv = _InvertibleUNetNd.lift_conv(in_channels=in_channels*2,
+                                                    conv=conv,
+                                                    normalization=normalization,
+                                                    kernel_size=kernel_size,
+                                                    padding=padding,
+                                                    activation=activation) 
+
+        def forward(self, x):
+            x_list = list(self.split(x))
+            x1 = torch.cat(x_list[:len(x_list)//2], dim=1)
+            x2 = torch.cat(x_list[len(x_list)//2:], dim=1)
+            x1, x2 = self.conv(x1, x2)
+            return x1, x2
+        
+        def rearward(self, x1, x2):
+            x1, x2 = self.conv.rearward(x1, x2)
+            xx, xy = torch.chunk(x1, 2, dim=1)
+            yx, yy = torch.chunk(x2, 2, dim=1)
+            x = self.split.rearward(xx, xy, yx, yy)
+            return x
+
+    class up(InvertibleModule):
+        def __init__(self, in_channels, activation=nn.ReLU):
+            super(_InvertibleUNetNd.up, self).__init__()
+            self.join = _InvertibleUNetNd._join()
+            self.conv = _InvertibleUNetNd.lift_conv(in_channels=in_channels*2,
+                                                    conv=conv,
+                                                    normalization=normalization,
+                                                    kernel_size=kernel_size,
+                                                    padding=padding,
+                                                    activation=activation) 
+        def forward(self, x1, x2):
+            x1, x2 = self.conv(x1, x2)
+            xx, xy = torch.chunk(x1, 2, dim=1)
+            yx, yy = torch.chunk(x2, 2, dim=1)
+            x = self.join(xx, xy, yx, yy)
+            return x
+
+        def rearward(self, x):
+            xx, xy, yx, yy = self.join.rearward(x)
+            x1 = torch.cat([xx, xy], dim=1)
+            x2 = torch.cat([yx, yy], dim=1)
+            x1, x2 = self.conv.rearward(x1, x2)
+            return x1, x2
+
+    def __init__(self, in_channels: int, out_channels: int,
+                 base_channels: int, depth: int,
+                 conv, up_conv, down_conv,
+                 normalization,
+                 max_channels: int=512,
+                 activation=nn.ReLU,
+                 final_activation=nn.Identity):
+        super(_UNetNd, self).__init__()
+        self.depth = depth
+        self.inc = _UNetNd.inconv(in_channels=in_channels,
+                                  out_channels=base_channels,
+                                  conv=conv,
+                                  normalization=normalization,
+                                  kernel_size=3,
+                                  padding=1,
+                                  activation=activation)
+        self.down_blocks = nn.ModuleList(
+            [
+                _UNetNd.down(
+                    in_channels=min(base_channels*(2**i), max_channels),
+                    out_channels=min(base_channels*(2**(i+1)), max_channels),
+                    conv=conv,
+                    down_conv=down_conv,
+                    normalization=normalization,
+                    kernel_size=3,
+                    padding=1,
+                    activation=activation
+                )
+                for i in range(depth)
+            ]
+        )
+        self.up_blocks = nn.ModuleList(
+            [
+                _UNetNd.up(
+                    in_channels=min(base_channels*(2**(i+1)), max_channels),
+                    mid_channels=min(base_channels*(2**(i+1)), max_channels),
+                    out_channels=max(min(base_channels*(2**(i+1)), max_channels)//2, base_channels),
+                    conv=conv,
+                    up_conv=up_conv,
+                    normalization=normalization,
+                    kernel_size=4,
+                    padding=1,
+                    activation=activation
+                )
+                for i in reversed(range(depth))
+            ]
+        )
+        self.outc = _UNetNd.outconv(in_channels=base_channels,
+                                    out_channels=out_channels,
+                                    conv=conv,
+                                    kernel_size=1,
+                                    padding=0,
+                                    activation=final_activation)
+
+    def forward(self, x):
+        skip_connections = []
+        x = self.inc(x)
+        for l in self.down_blocks:
+            skip_connections.append(x)
+            x = l(x)
+        for l in self.up_blocks:
+            x = l(x, skip_connections.pop())
+        x = self.outc(x)
+        return x
 
 
 class InvertibleUNet(InvertibleModule):
