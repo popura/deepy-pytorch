@@ -164,7 +164,7 @@ class _InvertibleUNetNd(InvertibleModule):
     class _split(InvertibleModule):
         def __init__(self, dim):
             super(_InvertibleUNetNd._split, self).__init__()
-            self.splitters = nn.ModuleList([Split(dim=-i) for in range(1, dim+1)])
+            self.splitters = nn.ModuleList([Split(dim=-i) for i in range(1, dim+1)])
 
         def forward(self, x):
             in_list = [x]
@@ -188,7 +188,7 @@ class _InvertibleUNetNd(InvertibleModule):
     class _join(InvertibleModule):
         def __init__(self, dim):
             super(_InvertibleUNetNd._join, self).__init__()
-            self.joiners = nn.ModuleList([Join(dim=-i) for in range(1, dim+1)])
+            self.joiners = nn.ModuleList([Join(dim=-i) for i in range(1, dim+1)])
 
         def forward(self, *args):
             in_list = list(args)

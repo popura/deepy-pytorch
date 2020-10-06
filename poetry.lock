@@ -265,6 +265,18 @@ version = "1.2.0"
 
 [[package]]
 category = "dev"
+description = "Open Source Differentiable Computer Vision Library for PyTorch"
+name = "kornia"
+optional = false
+python-versions = ">=3.6"
+version = "0.4.0"
+
+[package.dependencies]
+numpy = "*"
+torch = ">=1.6.0,<1.7.0"
+
+[[package]]
+category = "dev"
 description = "Safely add untrusted strings to HTML/XML markup."
 name = "markupsafe"
 optional = false
@@ -676,7 +688,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "3800bb17da7f8abf9cbcf546abaead6c0110071e27956a94a43cbd734df83b45"
+content-hash = "80023c6eef6d9f8c81ef4cd2d2bd5884fd333809741bc7f292aa0744c4c2f558"
 lock-version = "1.0"
 python-versions = "^3.7"
 
@@ -806,6 +818,9 @@ kiwisolver = [
     {file = "kiwisolver-1.2.0-cp38-none-win32.whl", hash = "sha256:d069ef4b20b1e6b19f790d00097a5d5d2c50871b66d10075dab78938dc2ee2cf"},
     {file = "kiwisolver-1.2.0-cp38-none-win_amd64.whl", hash = "sha256:18d749f3e56c0480dccd1714230da0f328e6e4accf188dd4e6884bdd06bf02dd"},
     {file = "kiwisolver-1.2.0.tar.gz", hash = "sha256:247800260cd38160c362d211dcaf4ed0f7816afb5efe56544748b21d6ad6d17f"},
+]
+kornia = [
+    {file = "kornia-0.4.0-py2.py3-none-any.whl", hash = "sha256:63b15f8823fafe6771fef95824453c62980679a45ba3e5a9f698ad74c96ef73e"},
 ]
 markupsafe = [
     {file = "MarkupSafe-1.1.1-cp27-cp27m-macosx_10_6_intel.whl", hash = "sha256:09027a7803a62ca78792ad89403b1b7a73a01c8cb65909cd876f7fcebd79b161"},

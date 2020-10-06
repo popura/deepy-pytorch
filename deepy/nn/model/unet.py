@@ -201,7 +201,7 @@ class _SEUNetNd(_UNetNd):
                      bias=False),
                 normalization(out_channels),
                 activation(),
-                SELayer(out_channels, reduction=reduction)
+                SELayer(out_channels, reduction=reduction),
                 activation()
             )
 

@@ -22,6 +22,7 @@ Sphinx = "^2.4.1"
 ipython = "^7.12.0"
 torchvision = "0.7.0"
 torchaudio = "0.6.0"
+kornia = "^0.4.0"
 
 [build-system]
 requires = ["poetry>=0.12"]
