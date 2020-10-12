@@ -1,4 +1,22 @@
-from ..transform import Transform
+import random
+
+from deepy.data.transform import Transform, SeparatedTransform
+from deepy.data.transform import PairedTransform, PairedCompose, ToPairedTransform
+from deepy.nn import functional as myF
+
+
+class RandomCrop(Transform):
+    def __init__(self, length: int):
+        self.length = length
+    
+    def __call__(self, data):
+        signal_length = data.size(-1)
+        start_index = random.randint(0, signal_length - self.length)
+        end_index = start_index + self.length
+        return data[..., start_index:end_index]
+    
+    def __repr__(self):
+        return self.__class__.__name__ + '(length={})'.format(self.length)
 
 
 class RandomFrames(Transform):
