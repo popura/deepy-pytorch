@@ -2,6 +2,7 @@ import time
 import os
 from abc import ABCMeta
 from abc import abstractmethod
+import typing
 
 import torch
 import torch.nn as nn
@@ -28,6 +29,7 @@ class Trainer(object):
                  criterion,
                  dataloader,
                  scheduler=None,
+                 extensions=None,
                  init_epoch=0,
                  device='cpu'):
         self.net = net
@@ -35,6 +37,7 @@ class Trainer(object):
         self.criterion = criterion
         self.dataloader = dataloader
         self.scheduler = scheduler
+        self.extensions = extensions
         self.device = device
         self.epoch = init_epoch
         self.history = {}
@@ -51,6 +54,7 @@ class Trainer(object):
             loss = self.step()
             # vallosses is a dictionary {str: value}
             vallosses = self.eval(*args, **kwargs)
+            self.extend()
             elapsed_time = time.time() - start_time
 
             self.history["trainloss"].append({'epoch':self.epoch, 'loss':loss})
@@ -94,12 +98,21 @@ class Trainer(object):
         if self.scheduler is not None:
             self.scheduler.step()
         self.epoch += 1
-        ave_loss= loss_meter.average
+        ave_loss = loss_meter.average
 
         return ave_loss
 
     def eval(self, dataloader=None):
         return None
+
+    def extend(self) -> typing.NoReturn:
+        if self.extensions is None:
+            return
+
+        for extension in self.extensions:
+            if extension.trigger(self):
+                extension(self)
+        return
 
 
 class ClassifierTrainer(Trainer):
@@ -140,6 +153,151 @@ class ClassifierTrainer(Trainer):
         hist_dict = {'total acc': total_accuracy}
         hist_dict.update({classes[i]: class_accuracy[i] for i in range(len(classes))})
         return hist_dict
+
+
+class MultiInputClassifierTrainer(Trainer):
+    """
+
+    Args:
+        net: an nn.Module. It should be applicable for multiple inputs
+        dataloaders: len(dataloaders) should be equal to the number of inputs
+                     and len(dataloader) for each dataloader should be the same as each other.
+    """
+    def __init__(self,
+                 net,
+                 optimizer,
+                 criterion,
+                 dataloaders,
+                 scheduler=None,
+                 extensions=None,
+                 init_epoch=0,
+                 device='cpu'):
+        self.net = net
+        self.optimizer = optimizer
+        self.criterion = criterion
+        self.dataloaders = dataloaders
+        self.scheduler = scheduler
+        self.extensions = extensions
+        self.device = device
+        self.epoch = init_epoch
+        self.history = {}
+
+    def train(self, epochs, *args, **kwargs):
+        start_time = time.time()
+        start_epoch = self.epoch
+        self.history["train"] = []
+        self.history["validation"] = []
+        print('-----Training Started-----')
+        for epoch in range(start_epoch, epochs):  # loop over the dataset multiple times
+            # loss is a scalar and self.epoch is incremented in this function
+            # (i.e. self.epoch = epoch + 1)
+            loss = self.step()
+            # vallosses is a dictionary {str: value}
+            vallosses = self.eval(*args, **kwargs)
+            self.extend()
+            elapsed_time = time.time() - start_time
+
+            self.history["train"].append({'epoch':self.epoch, 'loss':loss})
+            self.history["validation"].append({'epoch':self.epoch}.update(vallosses))
+
+            ave_required_time = elapsed_time / self.epoch
+            finish_time = ave_required_time * (epochs - self.epoch)
+            format_str = 'epoch: {:03d}/{:03d}'.format(self.epoch, epochs)
+            format_str += ' | '
+            format_str += 'loss: {:.4f}'.format(loss)
+            format_str += ' | '
+            if vallosses is not None:
+                for k, v in vallosses.items():
+                    format_str += '{}: {:.4f}'.format(k, v)
+                    format_str += ' | '
+            format_str += 'time: {:02d} hour {:02.2f} min'.format(int(elapsed_time/60/60), elapsed_time/60%60)
+            format_str += ' | '
+            format_str += 'finish after: {:02d} hour {:02.2f} min'.format(int(finish_time/60/60), finish_time/60%60)
+            print(format_str)
+        print('Total training time: {:02d} hour {:02.2f} min'.format(int(elapsed_time/60/60), elapsed_time/60%60))
+        print('-----Training Finished-----')
+
+        return self.net
+    
+    def step(self):
+        self.net.train()
+        loss_meter = AverageMeter()
+        dl_iters = [self.dataloaders[i].__iter__()
+                    for i in range(len(self.dataloaders))]
+        for i in range(len(self.dataloaders[0])):
+            inputs = []
+            for j in range(len(self.dataloaders)):
+                tmp_inputs, tmp_labels = dl_iters[j].next()
+                tmp_inputs = tmp_inputs.to(self.device)
+                tmp_labels = tmp_labels.to(self.device)
+                if j == 0:
+                    labels = tmp_labels
+                else:
+                    if not (labels == tmp_labels).all():
+                        raise ValueError('Different labels are loaded')
+                inputs.append(tmp_inputs)
+
+            outputs = self.net(*inputs)
+            loss = self.criterion(outputs, labels)
+
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+
+            loss_meter.update(loss.item(), number=inputs[0].size(0))
+
+        if self.scheduler is not None:
+            self.scheduler.step()
+        self.epoch += 1
+        ave_loss= loss_meter.average
+
+        return ave_loss
+
+    def eval(self, dataloaders, classes):
+        self.net.eval()
+        class_correct = list(0. for i in range(len(classes)))
+        class_total = list(0. for i in range(len(classes)))
+        with torch.no_grad():
+            dl_iters = [dataloaders[i].__iter__()
+                        for i in range(len(dataloaders))]
+            for i in range(len(dataloaders[0])):
+                inputs = []
+                for j in range(len(dataloaders)):
+                    tmp_inputs, tmp_labels = dl_iters[j].next()
+                    tmp_inputs = tmp_inputs.to(self.device)
+                    tmp_labels = tmp_labels.to(self.device)
+                    if j == 0:
+                        labels = tmp_labels
+                    else:
+                        if not (labels == tmp_labels).all():
+                            raise ValueError('Different labels are loaded')
+                    inputs.append(tmp_inputs)
+
+                outputs = self.net(*inputs)
+                _, predicted = torch.max(outputs.data, 1)
+                c = (predicted == labels)
+
+                for j in range(len(labels)):
+                    label = labels[j]
+                    class_correct[label] += c[j].item()
+                    class_total[label] += 1
+
+        class_accuracy = [c / t for c, t in zip(class_correct, class_total)]
+        total_accuracy = sum(class_correct) / sum(class_total)
+
+        hist_dict = {'total acc': total_accuracy}
+        hist_dict.update({classes[i]: class_accuracy[i] for i in range(len(classes))})
+        return hist_dict
+    
+    def extend(self) -> typing.NoReturn:
+        if self.extensions is None:
+            return
+
+        for extension in self.extensions:
+            if extension.trigger(self):
+                extension(self)
+        
+        return
 
 
 class RegressorTrainer(Trainer):
