@@ -45,8 +45,8 @@ class Trainer(object):
     def train(self, epochs, *args, **kwargs):
         start_time = time.time()
         start_epoch = self.epoch
-        self.history["trainloss"] = []
-        self.history["vallosses"] = []
+        self.history["train"] = []
+        self.history["validation"] = []
         print('-----Training Started-----')
         for epoch in range(start_epoch, epochs):  # loop over the dataset multiple times
             # loss is a scalar and self.epoch is incremented in this function
@@ -57,8 +57,8 @@ class Trainer(object):
             self.extend()
             elapsed_time = time.time() - start_time
 
-            self.history["trainloss"].append({'epoch':self.epoch, 'loss':loss})
-            self.history["vallosses"].append({'epoch':self.epoch}.update(vallosses))
+            self.history["train"].append({'epoch':self.epoch, 'loss':loss})
+            self.history["validation"].append({'epoch':self.epoch}.update(vallosses))
 
             ave_required_time = elapsed_time / self.epoch
             finish_time = ave_required_time * (epochs - self.epoch)
@@ -307,11 +307,13 @@ class RegressorTrainer(Trainer):
                  criterion,
                  dataloader,
                  scheduler=None,
+                 extensions=None,
                  init_epoch=0,
                  device='cpu'):
         super(RegressorTrainer, self).__init__(
             net, optimizer, criterion, dataloader,
-            scheduler=scheduler, init_epoch=init_epoch,
+            scheduler=scheduler, extensions=extensions,
+            init_epoch=init_epoch,
             device=device)
 
     def eval(self, dataloader):
@@ -329,7 +331,7 @@ class RegressorTrainer(Trainer):
                 loss_meter.update(loss.item(), number=inputs.size(0))
             
         ave_loss = loss_meter.average
-        return {'val. loss': ave_loss}
+        return {'loss': ave_loss}
 
 
 class GANTrainer(Trainer):
