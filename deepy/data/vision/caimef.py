@@ -111,6 +111,10 @@ class CaiMEImageDataset(PureDatasetFolder):
         root_path = Path(self.root)
         if not root_path.exists():
             root_path.mkdir(parents=True)
+        
+        if (root_path / "train").exists() and (root_path / "test").exists():
+            print("Cai's dataset already exists!")
+            return
     
         for i in range(len(self.RESOURCES)):
             filename = root_path / ('part' + str(i) + '.rar')
@@ -129,6 +133,8 @@ class CaiMEImageDataset(PureDatasetFolder):
         for i in range(len(self.RESOURCES)):
             (root_path / ('part' + str(i) + '.rar')).unlink()
             shutil.rmtree(root_path / ('Dataset_Part' + str(i+1)))
+        
+        return
     
     def move_files(self):
         root_path = Path(self.root)
