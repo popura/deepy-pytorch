@@ -187,7 +187,7 @@ class ModelSaver(Extension):
     def __init__(self, directory: Path,
                  name: typing.Callable[[Trainer], str],
                  trigger: Trigger) -> typing.NoReturn:
-        super().__init__()
+        super().__init__(trigger)
         directory.mkdir(parents=True, exist_ok=True)
         self.directory = directory
         self.name = name
