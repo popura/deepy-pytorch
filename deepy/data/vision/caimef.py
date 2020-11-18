@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import deepy.data.dataset
 from deepy.data.dataset import PureDatasetFolder, has_file_allowed_extension
 from deepy.data.vision.visiondataset import IMG_EXTENSIONS
+from deepy.data.util import download_file_from_google_drive
 from PIL import Image
 
 
