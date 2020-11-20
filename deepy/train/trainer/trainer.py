@@ -88,7 +88,7 @@ class Trainer(ABCTrainer):
             format_str += ' | '
             if vallosses is not None:
                 for k, v in vallosses.items():
-                    format_str += '{}: {:.4f}'.format('Val. ' + k, v)
+                    format_str += '{}: {:.4f}'.format('val. ' + k, v)
                     format_str += ' | '
             format_str += 'time: {:02d} hour {:02.2f} min'.format(int(elapsed_time/60/60), elapsed_time/60%60)
             format_str += ' | '
