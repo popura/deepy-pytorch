@@ -54,11 +54,12 @@ class Trainer(object):
             loss = self.step()
             # vallosses is a dictionary {str: value}
             vallosses = self.eval(*args, **kwargs)
-            self.extend()
             elapsed_time = time.time() - start_time
 
             self.history["train"].append({'epoch':self.epoch, 'loss':loss})
             self.history["validation"].append({'epoch':self.epoch}.update(vallosses))
+
+            self.extend()
 
             ave_required_time = elapsed_time / self.epoch
             finish_time = ave_required_time * (epochs - self.epoch)
