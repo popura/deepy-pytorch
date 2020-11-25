@@ -195,5 +195,7 @@ class ModelSaver(Extension):
     
     def __call__(self, trainer: Trainer) -> typing.NoReturn:
         net = trainer.net
+        if isinstance(net, nn.DataParallel):
+            net = net.module
         name = self.name(trainer)
         torch.save(net.state_dict(), str(self.directory / name))
