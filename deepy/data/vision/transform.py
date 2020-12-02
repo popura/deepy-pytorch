@@ -43,6 +43,22 @@ class PowerTwoResize(Transform):
         return self.__class__.__name__ + '(interpolation={0})'.format(interpolate_str)
 
 
+class ResizeToMultiple(Transform):
+    def __init__(self, divisor, interpolation=Image.BILINEAR):
+        super().__init__()
+        self.divisor = int(divisor)
+        self.interpolation = interpolation
+
+    def __call__(self, img):
+        new_size = ((img.height // self.divisor) * self.divisor,
+                    (img.width // self.divisor) * self.divisor)
+        return F.resize(img, new_size, self.interpolation)
+
+    def __repr__(self, ):
+        interpolate_str = _pil_interpolation_to_str[self.interpolation]
+        return self.__class__.__name__ + '(interpolation={0})'.format(interpolate_str)
+
+
 class PairedRandomHorizontalFlip(PairedTransform):
     def __init__(self, p=0.5):
         self.p = p
