@@ -17,11 +17,13 @@ class ClassifierTrainer(Trainer):
                  criterion,
                  dataloader,
                  scheduler=None,
+                 extensions=None,
                  init_epoch=0,
                  device='cpu'):
         super().__init__(
             net, optimizer, criterion, dataloader,
-            scheduler=scheduler, init_epoch=init_epoch,
+            scheduler=scheduler, extensions=extensions,
+            init_epoch=init_epoch,
             device=device)
 
     def eval(self, dataloader, classes):
@@ -69,8 +71,8 @@ class MultiInputClassifierTrainer(Trainer):
                  device='cpu'):
         super().__init__(
             net, optimizer, criterion, dataloader=None,
-            scheduler=scheduler, init_epoch=init_epoch,
-            device=device)
+            scheduler=scheduler, extensions=extensions,
+            init_epoch=init_epoch, device=device)
         self.dataloaders = dataloaders
 
     def step(self):
