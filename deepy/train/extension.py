@@ -1,10 +1,12 @@
 from pathlib import Path
 import typing
+import pickle
 
 import torch
 import torch.nn as nn
 
 from deepy.train.trainer import Trainer
+
 
 class Trigger(object):
     """A Base class of triggers used for calling extension modules in training.
@@ -98,7 +100,6 @@ class BestValueTrigger(Trigger):
             self.best_value = value
             return True
         return False
-
 
 
 class MaxValueTrigger(BestValueTrigger):
@@ -199,3 +200,29 @@ class ModelSaver(Extension):
             net = net.module
         name = self.name(trainer)
         torch.save(net.state_dict(), str(self.directory / name))
+
+
+class HistorySaver(Extension):
+    """Extension saving history of training.
+
+    Args:
+        directory: A directory where history will be saved.
+        name: A function that returns a file name for saved history.
+        trigger:
+    """
+
+    def __init__(self, directory: Path,
+                 name: typing.Callable[[Trainer], str],
+                 trigger: Trigger) -> typing.NoReturn:
+        super().__init__(trigger)
+        directory.mkdir(parents=True, exist_ok=True)
+        self.directory = directory
+        self.name = name
+        self.trigger = trigger
+    
+    def __call__(self, trainer: Trainer) -> typing.NoReturn:
+        name = self.name(trainer)
+        history = trainer.history
+
+        with open(str(self.directory / name), mode="wb") as f:
+            pickle.dump(history, f)
