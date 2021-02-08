@@ -15,6 +15,7 @@ class RandomCrop(Transform):
     def __call__(self, data):
         signal_length = data.size(-1)
         start_index = torch.randint(0, signal_length - self.length,
+                                    (1, ),
                                     generator=self.generator)
         end_index = start_index + self.length
         return data[..., start_index:end_index]
