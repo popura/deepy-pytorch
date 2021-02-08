@@ -1,17 +1,21 @@
 import random
 
+import torch
+
 from deepy.data.transform import Transform, SeparatedTransform
 from deepy.data.transform import PairedTransform, PairedCompose, ToPairedTransform
 from deepy.nn import functional as myF
 
 
 class RandomCrop(Transform):
-    def __init__(self, length: int):
+    def __init__(self, length: int, generator=None):
         self.length = length
+        self.generator = generator
     
     def __call__(self, data):
         signal_length = data.size(-1)
-        start_index = random.randint(0, signal_length - self.length)
+        start_index = torch.randint(0, signal_length - self.length,
+                                    generator=self.generator)
         end_index = start_index + self.length
         return data[..., start_index:end_index]
     
@@ -19,15 +23,10 @@ class RandomCrop(Transform):
         return self.__class__.__name__ + '(length={})'.format(self.length)
 
 
-class RandomFrames(Transform):
-    def __init__(self, n_frames=5):
+class RandomFrames(RandomCrop):
+    def __init__(self, n_frames=5, generator=None):
+        super().__init__(length=n_frames, generator=generator)
         self.n_frames = n_frames
-
-    def __call__(self, data):
-        total_frames = data.size(-1)
-        start_frame = random.randint(0, total_frames-self.n_frames)
-        end_frame = start_frame + self.n_frames
-        return data[..., start_frame:end_frame]
 
     def __repr__(self):
         return self.__class__.__name__ + '(n_frames={})'.format(self.n_frames)
