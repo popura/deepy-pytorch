@@ -48,15 +48,21 @@ class _UNetNd(nn.Module):
 
     class down(nn.Module):
         def __init__(self, in_channels: int, out_channels: int, conv,
-                     down_conv, normalization, kernel_size=3, padding=1, activation=nn.ReLU):
+                     down_conv, normalization,
+                     conv_kernel_size=3,
+                     conv_padding=1,
+                     down_kernel_size=3,
+                     down_padding=1,
+                     activation=nn.ReLU):
             super(_UNetNd.down, self).__init__()
             self.mpconv = nn.Sequential(
                 down_conv(in_channels=in_channels, out_channels=in_channels,
-                          padding=padding, kernel_size=kernel_size,
+                          padding=down_padding, kernel_size=down_kernel_size,
                           stride=2, bias=False),
                 _UNetNd.double_conv(in_channels, out_channels,
-                                    conv, normalization, kernel_size,
-                                    padding, activation)
+                                    conv, normalization,
+                                    conv_kernel_size, conv_padding,
+                                    activation)
             )
 
         def forward(self, x):
@@ -65,15 +71,17 @@ class _UNetNd(nn.Module):
 
     class up(nn.Module):
         def __init__(self, in_channels: int, mid_channels: int, out_channels: int,
-                     conv, up_conv, normalization, kernel_size=4,
-                     padding=1, activation=nn.ReLU):
+                     conv, up_conv, normalization,
+                     conv_kernel_size=3, conv_padding=1,
+                     up_kernel_size=4, up_padding=1,
+                     activation=nn.ReLU):
             super(_UNetNd.up, self).__init__()
             self.upconv = up_conv(in_channels=in_channels, out_channels=out_channels,
-                                  kernel_size=kernel_size, stride=2,
-                                  padding=padding, bias=False)
+                                  kernel_size=up_kernel_size, stride=2,
+                                  padding=up_padding, bias=False)
             self.conv = _UNetNd.double_conv(in_channels, out_channels,
-                                            conv, normalization, kernel_size,
-                                            padding, activation)
+                                            conv, normalization, conv_kernel_size,
+                                            conv_padding, activation)
 
         def forward(self, x1, x2):
             x1 = self.upconv(x1)
@@ -122,8 +130,8 @@ class _UNetNd(nn.Module):
                     conv=conv,
                     down_conv=down_conv,
                     normalization=normalization,
-                    kernel_size=3,
-                    padding=1,
+                    down_kernel_size=3,
+                    down_padding=1,
                     activation=activation
                 )
                 for i in range(depth)
@@ -138,8 +146,8 @@ class _UNetNd(nn.Module):
                     conv=conv,
                     up_conv=up_conv,
                     normalization=normalization,
-                    kernel_size=4,
-                    padding=1,
+                    up_kernel_size=4,
+                    up_padding=1,
                     activation=activation
                 )
                 for i in reversed(range(depth))
