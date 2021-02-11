@@ -368,7 +368,10 @@ class SelfSupervisedDataset(torchdata.Dataset):
         self.transforms = transforms
 
     def __getitem__(self, index):
-        sample, *_ = self.dataset[index]
+        sample = self.dataset[index]
+        if isinstance(sample, tuple):
+            sample = sample[0]
+
         if isinstance(sample, torch.Tensor):
             target = sample.detach().clone()
         else:
