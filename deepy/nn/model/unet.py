@@ -171,7 +171,16 @@ class UNet1d(_UNetNd):
                  conv=nn.Conv1d, up_conv=nn.ConvTranspose1d, down_conv=nn.Conv1d,
                  normalization=nn.BatchNorm1d, activation=nn.ReLU,
                  final_activation=nn.Identity):
-        super(UNet1d, self).__init__(*args, **kwargs)
+        super().__init__(in_channels=in_channels,
+                 out_channels=out_channels,
+                 base_channels=base_channels,
+                 max_channels=max_channels,
+                 conv=conv,
+                 up_conv=up_conv,
+                 down_conv=down_conv,
+                 normalization=normalization,
+                 activation=activation,
+                 final_activation=final_activation)
 
 
 class UNet2d(_UNetNd):
@@ -181,7 +190,16 @@ class UNet2d(_UNetNd):
                  conv=nn.Conv2d, up_conv=nn.ConvTranspose2d, down_conv=nn.Conv2d,
                  normalization=nn.BatchNorm2d, activation=nn.ReLU,
                  final_activation=nn.Identity):
-        super(UNet2d, self).__init__(*args, **kwargs)
+        super().__init__(in_channels=in_channels,
+                 out_channels=out_channels,
+                 base_channels=base_channels,
+                 max_channels=max_channels,
+                 conv=conv,
+                 up_conv=up_conv,
+                 down_conv=down_conv,
+                 normalization=normalization,
+                 activation=activation,
+                 final_activation=final_activation)
 
 
 class _SEUNetNd(_UNetNd):
@@ -342,7 +360,17 @@ class SEUNet1d(_SEUNetNd):
                  normalization=nn.BatchNorm1d,
                  reduction=16,
                  activation=nn.ReLU, final_activation=nn.Identity):
-        super(SEUNet1d, self).__init__(*args, **kwargs)
+        super().__init__(in_channels=in_channels,
+                 out_channels=out_channels,
+                 base_channels=base_channels,
+                 max_channels=max_channels,
+                 conv=conv,
+                 up_conv=up_conv,
+                 down_conv=down_conv,
+                 normalization=normalization,
+                 reduction=reduction,
+                 activation=activation,
+                 final_activation=final_activation)
 
 
 class SEUNet2d(_SEUNetNd):
@@ -353,4 +381,14 @@ class SEUNet2d(_SEUNetNd):
                  normalization=nn.BatchNorm2d,
                  reduction=16,
                  activation=nn.ReLU, final_activation=nn.Identity):
-        super(UNet2d, self).__init__(*args, **kwargs)
+        super().__init__(in_channels=in_channels,
+                 out_channels=out_channels,
+                 base_channels=base_channels,
+                 max_channels=max_channels,
+                 conv=conv,
+                 up_conv=up_conv,
+                 down_conv=down_conv,
+                 normalization=normalization,
+                 reduction=reduction,
+                 activation=activation,
+                 final_activation=final_activation)
