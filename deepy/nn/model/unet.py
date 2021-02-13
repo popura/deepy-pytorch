@@ -350,8 +350,8 @@ class _SEUNetNd(_UNetNd):
                     conv=conv,
                     down_conv=down_conv,
                     normalization=normalization,
-                    kernel_size=3,
-                    padding=1,
+                    down_kernel_size=3,
+                    down_padding=1,
                     reduction=reduction,
                     activation=activation
                 )
@@ -367,8 +367,8 @@ class _SEUNetNd(_UNetNd):
                     conv=conv,
                     up_conv=up_conv,
                     normalization=normalization,
-                    kernel_size=4,
-                    padding=1,
+                    up_kernel_size=4,
+                    up_padding=1,
                     reduction=reduction,
                     activation=activation
                 )
