@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchsummary import summary
 import deepy.nn.layer as layer
+from deepy.nn.model.senet import SELayer
 
 
 class _UNetNd(nn.Module):
@@ -224,7 +225,7 @@ class _SEUNetNd(_UNetNd):
         def __init__(self, in_channels: int, out_channels: int, conv,
                      normalization, kernel_size=3, padding=1,
                      reduction=16, activation=nn.ReLU):
-            super(_SEUNetNd.double_conv, self).__init__()
+            super().__init__()
             self.conv = nn.Sequential(
                 conv(in_channels=in_channels,
                      out_channels=out_channels,
@@ -245,7 +246,7 @@ class _SEUNetNd(_UNetNd):
         def __init__(self, in_channels: int, out_channels: int, conv,
                      normalization, kernel_size=3, padding=1,
                      reduction=16, activation=nn.ReLU):
-            super(_SEUNetNd.inconv, self).__init__()
+            super().__init__()
             self.conv = _SEUNetNd.se_conv(in_channels, out_channels,
                                           conv, normalization, kernel_size,
                                           padding, reduction, activation)
@@ -256,16 +257,18 @@ class _SEUNetNd(_UNetNd):
 
     class down(nn.Module):
         def __init__(self, in_channels: int, out_channels: int, conv,
-                     down_conv, normalization, kernel_size=3, padding=1,
+                     down_conv, normalization,
+                     conv_kernel_size=3, conv_padding=1,
+                     down_kernel_size=3, down_padding=1,
                      reduction=16, activation=nn.ReLU):
-            super(_SEUNetNd.down, self).__init__()
+            super().__init__()
             self.mpconv = nn.Sequential(
                 down_conv(in_channels=in_channels, out_channels=in_channels,
-                          padding=padding, kernel_size=kernel_size,
+                          padding=down_padding, kernel_size=down_kernel_size,
                           stride=2, bias=False),
                 _SEUNetNd.se_conv(in_channels, out_channels,
-                                  conv, normalization, kernel_size,
-                                  padding, reduction, activation)
+                                  conv, normalization, conv_kernel_size,
+                                  conv_padding, reduction, activation)
             )
 
         def forward(self, x):
@@ -274,15 +277,17 @@ class _SEUNetNd(_UNetNd):
 
     class up(nn.Module):
         def __init__(self, in_channels: int, mid_channels: int, out_channels: int,
-                     conv, up_conv, normalization, kernel_size=4,
-                     padding=1, reduction=16, activation=nn.ReLU):
-            super(_SEUNetNd.up, self).__init__()
+                     conv, up_conv, normalization,
+                     conv_kernel_size=3, conv_padding=1,
+                     up_kernel_size=4, up_padding=1,
+                     reduction=16, activation=nn.ReLU):
+            super().__init__()
             self.upconv = up_conv(in_channels=in_channels, out_channels=out_channels,
-                                  kernel_size=kernel_size, stride=2,
-                                  padding=padding, bias=False)
+                                  kernel_size=up_kernel_size, stride=2,
+                                  padding=up_padding, bias=False)
             self.conv = _SEUNetNd.se_conv(in_channels, out_channels,
-                                          conv, normalization, kernel_size,
-                                          padding, reduction, activation)
+                                          conv, normalization, conv_kernel_size,
+                                          conv_padding, reduction, activation)
 
         def forward(self, x1, x2):
             x1 = self.upconv(x1)
@@ -293,7 +298,7 @@ class _SEUNetNd(_UNetNd):
     class outconv(nn.Module):
         def __init__(self, in_channels: int, out_channels: int, conv,
                      kernel_size=1, padding=0, activation=nn.Identity):
-            super(_SEUNetNd.outconv, self).__init__()
+            super().__init__()
             self.conv = nn.Sequential(
                     conv(in_channels=in_channels,
                          out_channels=out_channels,
@@ -315,8 +320,20 @@ class _SEUNetNd(_UNetNd):
                  reduction: int=16,
                  activation=nn.ReLU,
                  final_activation=nn.Identity):
-        super(_SEUNetNd, self).__init__()
-        self.depth = depth
+        super().__init__(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            base_channels=base_channels,
+            depth=depth,
+            max_channels=max_channels,
+            conv=conv,
+            up_conv=up_conv,
+            down_conv=down_conv,
+            normalization=normalization,
+            activation=activation,
+            final_activation=final_activation
+        )
+        self.reduction = reduction
         self.inc = _SEUNetNd.inconv(in_channels=in_channels,
                                     out_channels=base_channels,
                                     conv=conv,
@@ -384,6 +401,7 @@ class SEUNet1d(_SEUNetNd):
             up_conv=up_conv,
             down_conv=down_conv,
             normalization=normalization,
+            reduction=reduction,
             activation=activation,
             final_activation=final_activation
         )
@@ -407,6 +425,7 @@ class SEUNet2d(_SEUNetNd):
             up_conv=up_conv,
             down_conv=down_conv,
             normalization=normalization,
+            reduction=reduction,
             activation=activation,
             final_activation=final_activation
         )
