@@ -5,7 +5,7 @@ from torchsummary import summary
 from deepy import layer
 
 
-class VGG(nn.Module):
+class OriginalVGG(nn.Module):
     """VGG8, 11, 13, 16, and 19
     
     >>> device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -48,7 +48,7 @@ class VGG(nn.Module):
     ----------------------------------------------------------------
     """
     def __init__(self, vgg_name, down_sampling_layer=nn.Conv2d):
-        super(VGG, self).__init__()
+        super().__init__()
         self.CFG = {
             'VGG8': [64, 'D', 128, 'D', 256, 'D', 512, 'D', 512, 'D'],
             'VGG11': [64, 'D', 128, 'D', 256, 256, 'D', 512, 512, 'D', 512, 512, 'D'],
@@ -81,3 +81,155 @@ class VGG(nn.Module):
                 in_channels = x
         layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
         return nn.Sequential(*layers)
+
+
+class ConvNormAct(nn.Module):
+    """ This module applies
+        conv => normalization => activation
+        multiple times.
+    """
+    def __init__(self, in_channels: int, out_channels: int, conv,
+                 normalization, kernel_size: int = 3, padding: int = 1, activation=nn.ReLU,
+                 times: int = 2):
+        super().__init__()
+        self.times = times
+        layers = [
+            conv(in_channels=in_channels,
+                 out_channels=out_channels,
+                 kernel_size=kernel_size,
+                 padding=padding,
+                 bias=False),
+            normalization(out_channels),
+            activation()]
+        for i in range(self.times - 1):
+            layers.extend([
+                conv(in_channels=out_channels,
+                     out_channels=out_channels,
+                     kernel_size=kernel_size,
+                     padding=padding,
+                     bias=False),
+                normalization(out_channels),
+                activation()])
+
+        self.conv = nn.Sequential(*layers)
+
+    def forward(self, x):
+        x = self.conv(x)
+        return x
+
+
+class Down(nn.Module):
+    def __init__(self, in_channels: int, out_channels: int, conv,
+                 down_conv, normalization,
+                 conv_kernel_size=3,
+                 conv_padding=1,
+                 down_kernel_size=3,
+                 down_padding=1,
+                 activation=nn.ReLU):
+        super().__init__()
+        self.mpconv = nn.Sequential(
+            down_conv(in_channels=in_channels, out_channels=in_channels,
+                      padding=down_padding, kernel_size=down_kernel_size,
+                      stride=2, bias=False),
+            ConvNormAct(in_channels, out_channels,
+                        conv, normalization,
+                        conv_kernel_size, conv_padding,
+                        activation)
+        )
+
+    def forward(self, x):
+        x = self.mpconv(x)
+        return x
+
+
+class _VGGNd(nn.Module):
+    """ _VGGNd
+    """
+
+    def __init__(self, in_channels: int, num_classes: int,
+                 base_channels: int, depth: int,
+                 conv, down_conv,
+                 normalization,
+                 max_channels: int=512,
+                 activation=nn.ReLU):
+        super().__init__()
+        self.depth = depth
+        self.inc = ConvNormAct(in_channels=in_channels,
+                               out_channels=base_channels,
+                               conv=conv,
+                               normalization=normalization,
+                               kernel_size=3,
+                               padding=1,
+                               activation=activation)
+        self.down_blocks = nn.ModuleList(
+            [
+                Down(
+                    in_channels=min(base_channels*(2**i), max_channels),
+                    out_channels=min(base_channels*(2**(i+1)), max_channels),
+                    conv=conv,
+                    down_conv=down_conv,
+                    normalization=normalization,
+                    down_kernel_size=3,
+                    down_padding=1,
+                    activation=activation
+                )
+                for i in range(depth)
+            ]
+        )
+
+        self.pool = nn.AdaptiveAvgPool1d(1)
+        self.linear = nn.Sequential(
+            nn.Linear(min(base_channels*(2**depth), max_channels), 64),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.2),
+            nn.Linear(64, num_classes),
+        )
+
+    def forward(self, x):
+        x = self.inc(x)
+        for i, l in enumerate(self.down_blocks):
+            x = l(x)
+        x = self.pool(x)
+        x = x.view(x.size(0), -1)
+        x = self.linear(x)
+        return x
+
+
+class VGG1D(_VGGNd):
+    def __init__(self, in_channels: int, num_classes: int,
+                 base_channels: int, depth: int,
+                 conv=nn.Conv1d, down_conv=nn.Conv1d,
+                 normalization=nn.BatchNorm1d,
+                 max_channels: int=512,
+                 activation=nn.ReLU):
+        super().__init__(
+            in_channels=in_channels,
+            num_classes=num_classes,
+            base_channels=base_channels,
+            depth=depth,
+            conv=conv,
+            down_conv=down_conv,
+            normalization=normalization,
+            max_channels=max_channels,
+            activation=activation,
+        )
+
+
+class VGG2d(_VGGNd):
+    def __init__(self, in_channels: int, num_classes: int,
+                 base_channels: int, depth: int,
+                 conv=nn.Conv2d, down_conv=nn.Conv2d,
+                 normalization=nn.BatchNorm2d,
+                 max_channels: int=512,
+                 activation=nn.ReLU):
+        super().__init__(
+            in_channels=in_channels,
+            num_classes=num_classes,
+            base_channels=base_channels,
+            depth=depth,
+            conv=conv,
+            down_conv=down_conv,
+            normalization=normalization,
+            max_channels=max_channels,
+            activation=activation,
+        )
