@@ -195,7 +195,7 @@ class _VGGNd(nn.Module):
         return x
 
 
-class VGG1D(_VGGNd):
+class VGG1d(_VGGNd):
     def __init__(self, in_channels: int, num_classes: int,
                  base_channels: int, depth: int,
                  conv=nn.Conv1d, down_conv=nn.Conv1d,
