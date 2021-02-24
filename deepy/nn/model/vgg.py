@@ -150,6 +150,7 @@ class _VGGNd(nn.Module):
                  base_channels: int, depth: int,
                  conv, down_conv,
                  normalization,
+                 global_pool,
                  max_channels: int=512,
                  activation=nn.ReLU):
         super().__init__()
@@ -177,7 +178,7 @@ class _VGGNd(nn.Module):
             ]
         )
 
-        self.pool = nn.AdaptiveAvgPool1d(1)
+        self.pool = global_pool(1)
         self.linear = nn.Sequential(
             nn.Linear(min(base_channels*(2**depth), max_channels), 64),
             nn.ReLU(inplace=True),
@@ -200,6 +201,7 @@ class VGG1d(_VGGNd):
                  base_channels: int, depth: int,
                  conv=nn.Conv1d, down_conv=nn.Conv1d,
                  normalization=nn.BatchNorm1d,
+                 global_pool=nn.AdaptiveAvgPool1d,
                  max_channels: int=512,
                  activation=nn.ReLU):
         super().__init__(
@@ -210,6 +212,7 @@ class VGG1d(_VGGNd):
             conv=conv,
             down_conv=down_conv,
             normalization=normalization,
+            global_pool=global_pool,
             max_channels=max_channels,
             activation=activation,
         )
@@ -220,6 +223,7 @@ class VGG2d(_VGGNd):
                  base_channels: int, depth: int,
                  conv=nn.Conv2d, down_conv=nn.Conv2d,
                  normalization=nn.BatchNorm2d,
+                 global_pool=nn.AdaptiveAvgPool2d,
                  max_channels: int=512,
                  activation=nn.ReLU):
         super().__init__(
@@ -230,6 +234,7 @@ class VGG2d(_VGGNd):
             conv=conv,
             down_conv=down_conv,
             normalization=normalization,
+            global_pool=global_pool,
             max_channels=max_channels,
             activation=activation,
         )
