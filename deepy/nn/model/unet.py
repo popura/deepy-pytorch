@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchsummary import summary
 import deepy.nn.layer as layer
 from deepy.nn.model.senet import SELayer
 

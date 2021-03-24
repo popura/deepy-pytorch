@@ -3,7 +3,6 @@ from typing import List
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchsummary import summary
 from deepy.nn.layer import InvertibleModule, Split, Join, Lift, Drop
 
 

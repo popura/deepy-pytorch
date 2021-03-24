@@ -1,9 +1,6 @@
 import random
 
 import numpy as np
-import cupy as cp
-from cupyx.scipy.sparse import spdiags
-from cupyx.scipy.sparse.linalg import lsqr
 
 import torch
 import torchvision.transforms.functional as F
@@ -113,78 +110,6 @@ class PairedRandomResizedCrop(PairedTransform):
         format_string += ', ratio={0}'.format(tuple(round(r, 4) for r in self.ratio))
         format_string += ', interpolation={0})'.format(interpolate_str)
         return format_string
-
-
-class WLSFilter(Transform):
-    '''
-    WLSFILTER Edge-preserving smoothing based on the weighted least squares(WLS) 
-       optimization framework, as described in Farbman, Fattal, Lischinski, and
-       Szeliski, "Edge-Preserving Decompositions for Multi-Scale Tone and Detail
-       Manipulation", ACM Transactions on Graphics, 27(3), August 2008.
-    
-       Given an input image IN, we seek a new image OUT, which, on the one hand,
-       is as close as possible to IN, and, at the same time, is as smooth as
-       possible everywhere, except across significant gradients in L.
-    
-    
-       Input arguments:
-       ----------------
-         IN              Input image (2-D, double, N-by-M matrix). 
-           
-         smoothness          Balances between the data term and the smoothness
-                         term. Increasing smoothness will produce smoother images.
-                         Default value is 1.0
-           
-         alpha           Gives a degree of control over the affinities by non-
-                         lineary scaling the gradients. Increasing alpha will
-                         result in sharper preserved edges. Default value: 1.2
-           
-         L               Source image for the affinity matrix. Same dimensions
-                         as the input image IN. Default: log(IN)
-     
-    
-       Example 
-       -------
-         RGB = imread('peppers.png'); 
-         I = double(rgb2gray(RGB));
-         I = I./max(I(:));
-         res = wlsFilter(I, 0.5);
-         figure, imshow(I), figure, imshow(res)
-         res = wlsFilter(I, 2, 2);
-         figure, imshow(res)
-    '''
-    def __init__(self, smoothness=1.0, alpha=1.2, L=None, eps=1e-8):
-        super(WLSFilter, self).__init__()
-        self.smoothness = smoothness
-        self.alpha = alpha
-        self.L = L
-        self.eps = eps
-
-    def __call__(self, img: torch.Tensor) -> torch.Tensor:
-        if self.L is None:
-            L = torch.log(img + self.eps)
-        else:
-            L = self.L
-
-        ch = img.size(0)
-        return torch.stack([_wsl_filter(img[i], L[i], self.smoothness, self.alpha) for i in range(ch)], dim=0)
-
-    def __repr__(self):
-        format_string = self.__class__.__name__ + '(smoothness={0}'.format(self.smoothness)
-        format_string += ', alpha={0}'.format(self.alpha)
-        format_string += ', L={0}'.format(self.L)
-        format_string += ', eps={0}'.format(self.eps)
-        format_string += ')'
-        return format_string
-
-
-class WLSFilterResidual(WLSFilter):
-    def __init__(self, smoothness=1.0, alpha=1.2, L=None, eps=1e-8):
-        super(WLSFilterResidual, self).__init__()
-    
-    def __call__(self, img: torch.Tensor) -> torch.Tensor:
-        out = super(WLSFilterResidual, self).__call__(img)
-        return img - out 
 
 
 class GaussianBlur(Transform):
