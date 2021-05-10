@@ -62,7 +62,7 @@ class PureDatasetFolder(torchdata.Dataset):
                              "be passed as argument")
         
         if has_pre_separate_transform:
-            pre_transforms = torchdataset.transform.SeparatedTransform(pre_transform, pre_target_transform)
+            pre_transforms = mytf.SeparatedTransform(pre_transform, pre_target_transform)
         self.pre_transforms = pre_transforms
 
     def __getitem__(self, index):
@@ -118,16 +118,12 @@ class UnorganizedDatasetFolder(PureDatasetFolder):
     """
 
     def __init__(self, root, loader, extensions=None,
-                 transform=None, target_transform=None, transforms=None,
-                 pre_load=False, pre_transform=None, pre_target_transform=None, pre_transforms=None,
+                 transforms=None,
+                 pre_load=False, pre_transforms=None,
                  is_valid_file=None):
         super(UnorganizedDatasetFolder, self).__init__(root,
-                                                       transform=transform,
-                                                       target_transform=target_transform,
                                                        transforms=transforms,
                                                        pre_load=pre_load,
-                                                       pre_transform=pre_transform,
-                                                       pre_target_transform=pre_target_transform,
                                                        pre_transforms=pre_transforms)
         samples = make_unorganized_dataset(self.root, extensions, is_valid_file)
         if len(samples) == 0:
@@ -152,8 +148,8 @@ class UnorganizedDatasetFolder(PureDatasetFolder):
         else:
             path = self.samples[index]
             sample = self.loader(path)
-        if self.transform is not None:
-            sample = self.transform(sample)
+        if self.transforms is not None:
+            sample = self.transforms(sample)
 
         return sample
 
@@ -167,8 +163,8 @@ class UnorganizedDatasetFolder(PureDatasetFolder):
             sys.stdout.flush()
             path = self.samples[i]
             sample = self.loader(path)
-            if self.pre_transform is not None:
-                sample = self.pre_transform(sample)
+            if self.pre_transforms is not None:
+                sample = self.pre_transforms(sample)
             preprocessed_samples.append(sample)
 
         self.preprocessed_samples = preprocessed_samples
