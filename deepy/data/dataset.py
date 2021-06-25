@@ -133,6 +133,7 @@ class UnorganizedDatasetFolder(PureDatasetFolder):
         self.loader = loader
         self.extensions = extensions
         self.samples = samples
+        self.pre_transforms
         if self.pre_load:
             self._pre_process()
 
