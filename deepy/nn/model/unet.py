@@ -165,11 +165,11 @@ class _UNetNd(nn.Module):
             ]
         )
         self.outc = self.outconv(in_channels=base_channels,
-                                    out_channels=out_channels,
-                                    conv=conv,
-                                    kernel_size=1,
-                                    padding=0,
-                                    activation=final_activation)
+                                 out_channels=out_channels,
+                                 conv=conv,
+                                 kernel_size=1,
+                                 padding=0,
+                                 activation=final_activation)
 
     def forward(self, x):
         skip_connections = []
