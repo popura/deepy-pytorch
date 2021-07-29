@@ -38,9 +38,9 @@ class _UNetNd(nn.Module):
         def __init__(self, in_channels: int, out_channels: int, conv,
                      normalization, kernel_size=3, padding=1, activation=nn.ReLU):
             super(_UNetNd.inconv, self).__init__()
-            self.conv = _UNetNd.double_conv(in_channels, out_channels,
-                                            conv, normalization, kernel_size,
-                                            padding, activation)
+            self.conv = self.conv_block(in_channels, out_channels,
+                                        conv, normalization, kernel_size,
+                                        padding, activation)
 
         def forward(self, x):
             x = self.conv(x)
@@ -59,10 +59,10 @@ class _UNetNd(nn.Module):
                 down_conv(in_channels=in_channels, out_channels=in_channels,
                           padding=down_padding, kernel_size=down_kernel_size,
                           stride=2, bias=False),
-                _UNetNd.double_conv(in_channels, out_channels,
-                                    conv, normalization,
-                                    conv_kernel_size, conv_padding,
-                                    activation)
+                self.conv_block(in_channels, out_channels,
+                                conv, normalization,
+                                conv_kernel_size, conv_padding,
+                                activation)
             )
 
         def forward(self, x):
@@ -79,9 +79,9 @@ class _UNetNd(nn.Module):
             self.upconv = up_conv(in_channels=in_channels, out_channels=out_channels,
                                   kernel_size=up_kernel_size, stride=2,
                                   padding=up_padding, bias=False)
-            self.conv = _UNetNd.double_conv(in_channels, out_channels,
-                                            conv, normalization, conv_kernel_size,
-                                            conv_padding, activation)
+            self.conv = self.conv_block(in_channels, out_channels,
+                                        conv, normalization, conv_kernel_size,
+                                        conv_padding, activation)
 
         def forward(self, x1, x2):
             x1 = self.upconv(x1)
@@ -114,6 +114,7 @@ class _UNetNd(nn.Module):
                  activation=nn.ReLU,
                  final_activation=nn.Identity):
         super(_UNetNd, self).__init__()
+        self.conv_block = _UNetNd.double_conv
         self.depth = depth
         self.inc = _UNetNd.inconv(in_channels=in_channels,
                                   out_channels=base_channels,
